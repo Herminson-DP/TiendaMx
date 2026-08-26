@@ -1,0 +1,28 @@
+<%- include('header') %>
+
+<h2>Historial de Compras</h2>
+
+<% if (!orders || orders.length === 0) { %>
+    <p>No hay órdenes registradas aún.</p>
+<% } else { %>
+    <% orders.forEach(order => { %>
+        <div class="card-order">
+            <div class="flex-between">
+                <h4>Orden: <%= order.id %></h4>
+                <span><%= order.date %></span>
+            </div>
+            <p><strong>Cliente:</strong> <%= order.customer.name %> (<%= order.customer.email %>)</p>
+            <p><strong>Total:</strong> $<%= Number(order.total).toFixed(2) %></p>
+            <details>
+                <summary>Ver Detalles</summary>
+                <ul>
+                    <% order.items.forEach(item => { %>
+                        <li><%= item.quantity %>x <%= item.product.name %> - $<%= Number(item.total).toFixed(2) %></li>
+                    <% }); %>
+                </ul>
+            </details>
+        </div>
+    <% }); %>
+<% } %>
+
+<%- include('footer') %>

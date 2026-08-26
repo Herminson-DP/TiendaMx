@@ -1,0 +1,48 @@
+<%- include('header') %>
+
+<h2>Carrito de Compras</h2>
+
+<% if (!details.items || details.items.length === 0) { %>
+    <p>El carrito está vacío. <a href="/index.php">Volver al catálogo</a>.</p>
+<% } else { %>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Precio Unit.</th>
+                <th>Cantidad</th>
+                <th>Subtotal</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% details.items.forEach(item => { %>
+                <tr>
+                    <td><%= item.product.name %></td>
+                    <td>$<%= Number(item.unit_price).toFixed(2) %></td>
+                    <td>
+                        <form action="/index.php?action=update-cart" method="POST" class="inline-form">
+                            <input type="hidden" name="product_id" value="<%= item.product.id %>">
+                            <input type="number" name="quantity" value="<%= item.quantity %>" min="1" class="qty-input">
+                            <button type="submit" class="btn-sm">Actualizar</button>
+                        </form>
+                    </td>
+                    <td>$<%= Number(item.total).toFixed(2) %></td>
+                    <td>
+                        <a href="/index.php?action=remove-from-cart&id=<%= item.product.id %>" class="btn-danger-sm">Eliminar</a>
+                    </td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+
+    <div class="summary-box">
+        <p><strong>Subtotal:</strong> $<%= Number(details.subtotal).toFixed(2) %></p>
+        <p><strong>Impuestos (<%= config.tax || 16 %>%):</strong> $<%= Number(details.tax).toFixed(2) %></p>
+        <p><strong>Envío:</strong> $<%= Number(details.shipping).toFixed(2) %></p>
+        <h3><strong>Total:</strong> $<%= Number(details.final_total).toFixed(2) %></h3>
+        <a href="/index.php?action=checkout" class="btn btn-block">Proceder al Pago</a>
+    </div>
+<% } %>
+
+<%- include('footer') %>
