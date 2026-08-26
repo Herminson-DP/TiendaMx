@@ -1,89 +1,343 @@
 <%- include('header') %>
 
-<h2>Panel de Administración</h2>
-
-<div class="admin-grid">
+<div class="flex-between" style="margin-bottom: 28px;">
     <div>
-        <h3><%= editProduct ? 'Editar Producto' : 'Agregar Producto' %></h3>
-        <form action="/index.php?action=admin-save-product" method="POST" class="form-box">
-            <input type="hidden" name="id" value="<%= editProduct ? editProduct.id : '' %>">
-            <div class="form-group">
-                <label>Nombre:</label>
-                <input type="text" name="name" value="<%= editProduct ? editProduct.name : '' %>" required>
-            </div>
-            <div class="form-group">
-                <label>Categoría:</label>
-                <input type="text" name="category" value="<%= editProduct ? editProduct.category : '' %>" required>
-            </div>
-            <div class="form-group">
-                <label>Precio:</label>
-                <input type="number" step="0.01" name="price" value="<%= editProduct ? editProduct.price : '' %>" required>
-            </div>
-            <div class="form-group">
-                <label>Descuento (%):</label>
-                <input type="number" step="0.01" name="discount" value="<%= editProduct ? editProduct.discount : 0 %>">
-            </div>
-            <div class="form-group">
-                <label>Descripción:</label>
-                <textarea name="description" required><%= editProduct ? editProduct.description : '' %></textarea>
-            </div>
-            <div class="form-group">
-                <label>Especificaciones:</label>
-                <input type="text" name="specs" value="<%= editProduct ? editProduct.specs : '' %>" required>
-            </div>
-            <div class="form-group">
-                <label>URL Imagen:</label>
-                <input type="text" name="image" value="<%= editProduct ? editProduct.image : '' %>" placeholder="https://...">
-            </div>
-            <button type="submit" class="btn"><%= editProduct ? 'Actualizar' : 'Guardar' %></button>
-            <% if (editProduct) { %>
-                <a href="/index.php?action=admin" class="btn btn-secondary">Cancelar</a>
-            <% } %>
-        </form>
+        <h2>Panel de Administración ⚙️</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">Control integral de catálogo, pedidos, inventario, cupones y configuración.</p>
+    </div>
+    <a href="/index.php" class="btn btn-secondary btn-sm">👁️ Ver Tienda Pública</a>
+</div>
 
-        <h3>Configuración del Sistema</h3>
-        <form action="/index.php?action=admin-save-config" method="POST" class="form-box">
-            <div class="form-group">
-                <label>Nombre de la Tienda:</label>
-                <input type="text" name="store_name" value="<%= config.store_name %>" required>
-            </div>
-            <div class="form-group">
-                <label>Impuestos (%):</label>
-                <input type="number" step="0.01" name="tax" value="<%= config.tax %>" required>
-            </div>
-            <div class="form-group">
-                <label>Costo de Envío ($):</label>
-                <input type="number" step="0.01" name="shipping" value="<%= config.shipping %>" required>
-            </div>
-            <button type="submit" class="btn">Guardar Configuración</button>
-        </form>
+<!-- KPI Metrics Dashboard -->
+<section class="admin-metrics-grid">
+    <div class="metric-card metric-card-emerald">
+        <div class="metric-icon">💰</div>
+        <div>
+            <div class="metric-val"><%= formatMoney(metrics.totalRevenue) %></div>
+            <div class="metric-label">Ingresos Totales (Ventas COP)</div>
+        </div>
+    </div>
+    <div class="metric-card metric-card-purple">
+        <div class="metric-icon">📦</div>
+        <div>
+            <div class="metric-val"><%= metrics.totalOrders %></div>
+            <div class="metric-label">Total de Órdenes Realizadas</div>
+        </div>
+    </div>
+    <div class="metric-card metric-card-amber">
+        <div class="metric-icon">📊</div>
+        <div>
+            <div class="metric-val"><%= formatMoney(metrics.averageTicket) %></div>
+            <div class="metric-label">Ticket Promedio por Pedido</div>
+        </div>
+    </div>
+    <div class="metric-card metric-card-rose">
+        <div class="metric-icon">⚠️</div>
+        <div>
+            <div class="metric-val"><%= metrics.lowStockCount %></div>
+            <div class="metric-label">Productos con Stock Bajo (&le; 5)</div>
+        </div>
+    </div>
+</section>
+
+<!-- Admin Navigation Tabs -->
+<div class="admin-tabs-nav">
+    <button type="button" class="admin-tab-btn <%= !editProduct ? 'active' : '' %>" data-target="tab-products">
+        🏷️ Productos & Inventario (<%= products.length %>)
+    </button>
+    <button type="button" class="admin-tab-btn" data-target="tab-orders">
+        🚚 Gestión de Órdenes (<%= orders.length %>)
+    </button>
+    <button type="button" class="admin-tab-btn" data-target="tab-coupons">
+        🎁 Cupones de Descuento (<%= coupons.length %>)
+    </button>
+    <button type="button" class="admin-tab-btn <%= editProduct ? 'active' : '' %>" data-target="tab-form">
+        <%= editProduct ? '✏️ Editar Producto' : '➕ Agregar Producto' %>
+    </button>
+    <button type="button" class="admin-tab-btn" data-target="tab-settings">
+        ⚙️ Configuración General
+    </button>
+</div>
+
+<!-- Tab 1: Products List -->
+<div class="admin-tab-pane" id="tab-products" style="<%= editProduct ? 'display: none;' : 'display: block;' %>">
+    <div class="flex-between" style="margin-bottom: 16px;">
+        <h3>Catálogo de Productos</h3>
+        <button type="button" class="btn btn-primary btn-sm" onclick="document.querySelector('[data-target=\'tab-form\']').click()">
+            + Nuevo Producto
+        </button>
     </div>
 
-    <div>
-        <h3>Lista de Productos</h3>
-        <table class="table">
+    <div class="table-responsive">
+        <table class="custom-table">
             <thead>
                 <tr>
-                    <th>Nombre</th>
+                    <th>Producto</th>
                     <th>Categoría</th>
                     <th>Precio</th>
+                    <th>Descuento</th>
+                    <th>Stock</th>
+                    <th>Calificación</th>
+                    <th>Badge</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 <% products.forEach(p => { %>
                     <tr>
-                        <td><%= p.name %></td>
-                        <td><%= p.category %></td>
-                        <td>$<%= Number(p.price).toFixed(2) %></td>
                         <td>
-                            <a href="/index.php?action=admin&edit=<%= p.id %>" class="btn-sm">Editar</a>
-                            <a href="/index.php?action=admin-delete-product&id=<%= p.id %>" class="btn-danger-sm" onclick="return confirm('¿Eliminar producto?')">Eliminar</a>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <img src="<%= p.image %>" alt="<%= p.name %>" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover;">
+                                <strong><%= p.name %></strong>
+                            </div>
+                        </td>
+                        <td><span class="badge-tag" style="background: #e0e7ff; color: #3730a3;"><%= p.category %></span></td>
+                        <td><%= formatMoney(p.price) %></td>
+                        <td><%= p.discount > 0 ? `-${p.discount}%` : 'Sin desc.' %></td>
+                        <td>
+                            <% if ((p.stock || 0) <= 5) { %>
+                                <span style="color: #dc2626; font-weight: 700;">⚠️ <%= p.stock || 0 %> unid.</span>
+                            <% } else { %>
+                                <span style="color: #059669; font-weight: 600;"><%= p.stock %> unid.</span>
+                            <% } %>
+                        </td>
+                        <td>★ <%= p.rating || 4.8 %> (<%= p.reviewsCount || 10 %>)</td>
+                        <td><%= p.badge ? p.badge : '-' %></td>
+                        <td>
+                            <div class="flex-gap">
+                                <a href="/index.php?action=admin&edit=<%= p.id %>" class="btn-sm" style="background: #3b82f6; color: white;">Editar</a>
+                                <a href="/index.php?action=admin-delete-product&id=<%= p.id %>" class="btn-danger-sm" onclick="return confirm('¿Estás seguro de eliminar este producto del catálogo?')">Eliminar</a>
+                            </div>
                         </td>
                     </tr>
                 <% }); %>
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- Tab 2: Orders Management -->
+<div class="admin-tab-pane" id="tab-orders" style="display: none;">
+    <h3 style="margin-bottom: 16px;">Órdenes y Envíos</h3>
+    <% if (orders.length === 0) { %>
+        <p>No hay órdenes registradas.</p>
+    <% } else { %>
+        <div class="table-responsive">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Orden ID</th>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Total</th>
+                        <th>Estado Actual</th>
+                        <th>Actualizar Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% orders.forEach(ord => { %>
+                        <tr>
+                            <td><strong><%= ord.id %></strong></td>
+                            <td style="font-size: 0.85rem;"><%= ord.date %></td>
+                            <td>
+                                <div><strong><%= ord.customer.name %></strong></div>
+                                <div style="font-size: 0.78rem; color: var(--text-muted);"><%= ord.customer.email %></div>
+                            </td>
+                            <td><strong><%= formatMoney(ord.total) %> COP</strong></td>
+                            <td>
+                                <span class="badge-tag" style="background: #334155; color: white;">
+                                    <%= ord.status || 'Confirmado' %>
+                                </span>
+                            </td>
+                            <td>
+                                <form action="/index.php?action=admin-update-order" method="POST" class="flex-gap" style="margin: 0;">
+                                    <input type="hidden" name="order_id" value="<%= ord.id %>">
+                                    <select name="status" class="filter-select" style="padding: 4px 8px; font-size: 0.82rem;">
+                                        <option value="Confirmado" <%= ord.status === 'Confirmado' ? 'selected' : '' %>>Confirmado</option>
+                                        <option value="Preparando" <%= ord.status === 'Preparando' ? 'selected' : '' %>>En Preparación</option>
+                                        <option value="Enviado" <%= ord.status === 'Enviado' ? 'selected' : '' %>>En Camino</option>
+                                        <option value="Entregado" <%= ord.status === 'Entregado' ? 'selected' : '' %>>Entregado</option>
+                                        <option value="Cancelado" <%= ord.status === 'Cancelado' ? 'selected' : '' %>>Cancelado</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-primary btn-sm">Actualizar</button>
+                                </form>
+                            </td>
+                            <td>
+                                <a href="/index.php?action=receipt&id=<%= ord.id %>" class="btn btn-secondary btn-sm" target="_blank">Ver Recibo</a>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    <% } %>
+</div>
+
+<!-- Tab 3: Coupons Management -->
+<div class="admin-tab-pane" id="tab-coupons" style="display: none;">
+    <div class="grid-2">
+        <div>
+            <h3 style="margin-bottom: 16px;">Crear Nuevo Cupón</h3>
+            <form action="/index.php?action=admin-save-coupon" method="POST" class="form-box">
+                <div class="form-field">
+                    <label>Código del Cupón (Mayúsculas):</label>
+                    <input type="text" name="code" placeholder="Ej. COLOMBIA15" required style="text-transform: uppercase;">
+                </div>
+                <div class="form-field">
+                    <label>Tipo de Descuento:</label>
+                    <select name="type" required class="filter-select">
+                        <option value="percent">Porcentaje (%) sobre el subtotal</option>
+                        <option value="fixed">Monto Fijo ($ COP)</option>
+                        <option value="free_shipping">Envío Gratis</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Valor (ej. 15 para 15% o 50000 para $50.000 COP):</label>
+                    <input type="number" step="1" name="value" value="10" required>
+                </div>
+                <div class="form-field">
+                    <label>Descripción corta:</label>
+                    <input type="text" name="description" placeholder="10% de descuento en tu compra" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Guardar Cupón</button>
+            </form>
+        </div>
+
+        <div>
+            <h3 style="margin-bottom: 16px;">Cupones Activos</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <% coupons.forEach(c => { %>
+                    <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="font-size: 1.1rem; color: var(--primary);"><%= c.code %></strong>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);"><%= c.description %></div>
+                            <span style="font-size: 0.78rem; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 4px;">
+                                <%= c.type === 'percent' ? `${c.value}% Descuento` : (c.type === 'fixed' ? `${formatMoney(c.value)} COP Descuento Fijo` : 'Envío Gratis') %>
+                            </span>
+                        </div>
+                        <a href="/index.php?action=admin-delete-coupon&code=<%= c.code %>" class="btn-danger-sm" onclick="return confirm('¿Eliminar cupón?')">Eliminar</a>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tab 4: Product Create/Edit Form -->
+<div class="admin-tab-pane" id="tab-form" style="<%= editProduct ? 'display: block;' : 'display: none;' %>">
+    <div style="max-width: 760px; margin: 0 auto;">
+        <h3 style="margin-bottom: 16px;"><%= editProduct ? `Editar Producto: ${editProduct.name}` : 'Crear Nuevo Producto en Catálogo' %></h3>
+        
+        <form action="/index.php?action=admin-save-product" method="POST" class="form-box">
+            <input type="hidden" name="id" value="<%= editProduct ? editProduct.id : '' %>">
+
+            <div class="form-row">
+                <div class="form-field">
+                    <label>Nombre del Producto *</label>
+                    <input type="text" name="name" value="<%= editProduct ? editProduct.name : '' %>" required placeholder="Ej. MacBook Pro 16 M3">
+                </div>
+                <div class="form-field">
+                    <label>Categoría *</label>
+                    <input type="text" name="category" value="<%= editProduct ? editProduct.category : 'Electrónica' %>" required placeholder="Electrónica, Audio, Hogar, etc.">
+                </div>
+            </div>
+
+            <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
+                <div class="form-field">
+                    <label>Precio Normal ($ COP) *</label>
+                    <input type="number" step="1000" name="price" value="<%= editProduct ? editProduct.price : '' %>" required placeholder="1500000">
+                </div>
+                <div class="form-field">
+                    <label>Descuento (% opcional)</label>
+                    <input type="number" step="1" min="0" max="90" name="discount" value="<%= editProduct ? editProduct.discount : 0 %>" placeholder="0">
+                </div>
+                <div class="form-field">
+                    <label>Stock / Inventario *</label>
+                    <input type="number" step="1" min="0" name="stock" value="<%= editProduct ? (editProduct.stock !== undefined ? editProduct.stock : 10) : 10 %>" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-field">
+                    <label>Insignia / Badge Destacado (Opcional)</label>
+                    <input type="text" name="badge" value="<%= editProduct ? editProduct.badge : '' %>" placeholder="Más Vendido, Oferta, Nuevo, Pro">
+                </div>
+                <div class="form-field">
+                    <label>Calificación Inicial (1 a 5)</label>
+                    <input type="number" step="0.1" min="1" max="5" name="rating" value="<%= editProduct ? (editProduct.rating || 4.8) : 4.9 %>">
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label>URL de Imagen Principal *</label>
+                <input type="url" name="image" value="<%= editProduct ? editProduct.image : '' %>" placeholder="https://images.unsplash.com/...">
+            </div>
+
+            <div class="form-field">
+                <label>Descripción Comercial *</label>
+                <textarea name="description" rows="3" required placeholder="Describe las ventajas y bondades del producto..."><%= editProduct ? editProduct.description : '' %></textarea>
+            </div>
+
+            <div class="form-field">
+                <label>Especificaciones Técnicas *</label>
+                <input type="text" name="specs" value="<%= editProduct ? editProduct.specs : '' %>" required placeholder="Ej. 16GB RAM, 512GB SSD, Pantalla OLED 120Hz">
+            </div>
+
+            <div class="flex-gap" style="margin-top: 20px;">
+                <button type="submit" class="btn btn-primary btn-lg" style="flex: 1;">
+                    <%= editProduct ? 'Actualizar Producto' : 'Guardar y Publicar' %>
+                </button>
+                <% if (editProduct) { %>
+                    <a href="/index.php?action=admin" class="btn btn-secondary btn-lg">Cancelar</a>
+                <% } %>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tab 5: General Settings -->
+<div class="admin-tab-pane" id="tab-settings" style="display: none;">
+    <div style="max-width: 650px; margin: 0 auto;">
+        <h3 style="margin-bottom: 16px;">Configuración de la Tienda</h3>
+        
+        <form action="/index.php?action=admin-save-config" method="POST" class="form-box">
+            <div class="form-field">
+                <label>Nombre de la Marca / Tienda:</label>
+                <input type="text" name="store_name" value="<%= config.store_name %>" required>
+            </div>
+
+            <div class="form-field">
+                <label>Eslogan / Tagline Comercial:</label>
+                <input type="text" name="tagline" value="<%= config.tagline %>" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-field">
+                    <label>Impuesto IVA (%):</label>
+                    <input type="number" step="0.01" name="tax" value="<%= config.tax %>" required>
+                </div>
+                <div class="form-field">
+                    <label>Costo de Envío Base ($ COP):</label>
+                    <input type="number" step="100" name="shipping" value="<%= config.shipping %>" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-field">
+                    <label>Mínimo de Compra para Envío Gratis ($ COP):</label>
+                    <input type="number" step="1000" name="free_shipping_threshold" value="<%= config.free_shipping_threshold || 200000 %>" required>
+                </div>
+                <div class="form-field">
+                    <label>Moneda:</label>
+                    <input type="text" name="currency" value="<%= config.currency || 'COP' %>" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 14px;">
+                Guardar Configuración
+            </button>
+        </form>
     </div>
 </div>
 

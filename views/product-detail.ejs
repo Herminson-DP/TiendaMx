@@ -1,0 +1,211 @@
+<%- include('header') %>
+
+<!-- Breadcrumbs Navigation -->
+<div style="margin-bottom: 24px; font-size: 0.88rem; color: var(--text-muted);">
+    <a href="/index.php" style="color: var(--primary);">Inicio</a> &gt; 
+    <a href="/index.php?category=<%= encodeURIComponent(product.category) %>" style="color: var(--primary);"><%= product.category %></a> &gt; 
+    <span><%= product.name %></span>
+</div>
+
+<% 
+    const discount = Number(product.discount) || 0;
+    const finalPrice = product.price * (1 - discount / 100);
+    const isWishlisted = wishlist && wishlist.includes(product.id);
+    const stock = product.stock !== undefined ? product.stock : 10;
+%>
+
+<section class="product-detail-layout">
+    <!-- Left Column: Gallery & Images -->
+    <div>
+        <div class="gallery-main">
+            <img 
+                id="mainProductImage"
+                src="<%= product.image %>" 
+                alt="<%= product.name %>"
+                onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80'"
+            >
+        </div>
+        
+        <% if (product.gallery && product.gallery.length > 1) { %>
+            <div class="gallery-thumbs">
+                <% product.gallery.forEach((imgUrl, idx) => { %>
+                    <div class="thumb-item <%= idx === 0 ? 'active' : '' %>" data-img="<%= imgUrl %>">
+                        <img src="<%= imgUrl %>" alt="Vista <%= idx + 1 %>">
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+
+        <!-- Security and Guarantee badges -->
+        <div style="margin-top: 32px; background: #f8fafc; border-radius: 12px; padding: 18px; border: 1px solid var(--border);">
+            <div style="display: flex; gap: 14px; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 1.5rem;">🔒</span>
+                <div>
+                    <strong style="font-size: 0.9rem;">Pago Protegido y Cifrado</strong>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Tus transacciones se procesan bajo los más estrictos estándares de seguridad.</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 14px; align-items: center;">
+                <span style="font-size: 1.5rem;">🔄</span>
+                <div>
+                    <strong style="font-size: 0.9rem;">Garantía de Devolución Directa</strong>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Si el producto no cumple tus expectativas, te devolvemos tu dinero en 30 días.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Product Info & Purchase Options -->
+    <div class="detail-info">
+        <div class="flex-between" style="margin-bottom: 12px;">
+            <span class="badge-tag badge-custom"><%= product.category %></span>
+            
+            <form action="/index.php?action=toggle-wishlist" method="POST" style="margin: 0;">
+                <input type="hidden" name="product_id" value="<%= product.id %>">
+                <button type="submit" class="btn btn-secondary btn-sm" style="display: flex; align-items: center; gap: 6px;">
+                    <span><%= isWishlisted ? '❤️ En Favoritos' : '🤍 Guardar en Favoritos' %></span>
+                </button>
+            </form>
+        </div>
+
+        <h1><%= product.name %></h1>
+
+        <!-- Rating Summary -->
+        <div class="card-rating" style="margin-bottom: 20px; font-size: 0.95rem;">
+            <span class="stars" style="font-size: 1.1rem;">★★★★★</span>
+            <strong><%= Number(product.rating || 4.9).toFixed(1) %> de 5</strong>
+            <span>(<%= product.reviewsCount || 48 %> calificaciones de clientes verificados)</span>
+        </div>
+
+        <!-- Price Breakdown -->
+        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px;">
+            <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px;">
+                <span class="price-main" style="font-size: 2.2rem; color: var(--primary);"><%= formatMoney(finalPrice) %> COP</span>
+                <% if (discount > 0) { %>
+                    <span class="price-old" style="font-size: 1.2rem;"><%= formatMoney(product.price) %></span>
+                    <span class="badge-tag badge-discount">-<%= discount %>% AHORRO</span>
+                <% } %>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">
+                IVA del <%= config.tax || 19 %>% incluido. Hasta 12 cuotas mensuales de <%= formatMoney(finalPrice / 12) %> COP con tarjetas y bancos aliados.
+            </p>
+        </div>
+
+        <!-- Description -->
+        <div style="margin-bottom: 24px;">
+            <h3 style="font-size: 1.1rem; margin-bottom: 8px;">Descripción General</h3>
+            <p style="color: #475569; line-height: 1.7; font-size: 0.98rem;"><%= product.description %></p>
+        </div>
+
+        <!-- Specifications Box -->
+        <div class="detail-specs-box">
+            <div class="specs-title">⚙️ Ficha Técnica & Especificaciones</div>
+            <p style="font-size: 0.95rem; color: var(--secondary); font-weight: 500;"><%= product.specs %></p>
+        </div>
+
+        <!-- Stock and Shipping Info -->
+        <div style="margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <% if (stock > 0) { %>
+                    <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #10b981;"></span>
+                    <strong style="color: #065f46;">En Stock disponible (<%= stock %> unidades para envío inmediato)</strong>
+                <% } else { %>
+                    <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ef4444;"></span>
+                    <strong style="color: #991b1b;">Agotado actualmente</strong>
+                <% } %>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">
+                🚀 Envío Express disponible: recibe en 24-48 horas hábiles.
+            </p>
+        </div>
+
+        <!-- Add to Cart Form with Quantity Stepper -->
+        <% if (stock > 0) { %>
+            <form action="/index.php?action=add-to-cart" method="POST" style="display: flex; gap: 16px; align-items: center; margin-bottom: 32px; flex-wrap: wrap;">
+                <input type="hidden" name="product_id" value="<%= product.id %>">
+                <input type="hidden" name="return_url" value="/index.php?action=cart">
+                
+                <div class="qty-control">
+                    <button type="button" class="qty-btn" data-step="-1">-</button>
+                    <input type="number" name="quantity" value="1" min="1" max="<%= stock %>" class="qty-input-box" readonly>
+                    <button type="button" class="qty-btn" data-step="1">+</button>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg" style="flex: 1; min-width: 220px;">
+                    🛒 Comprar / Agregar al Carrito
+                </button>
+            </form>
+        <% } %>
+    </div>
+</section>
+
+<!-- Customer Reviews Section -->
+<section style="background: white; border-radius: 16px; border: 1px solid var(--border); padding: 32px; margin-bottom: 48px;">
+    <div class="flex-between" style="margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+        <div>
+            <h2>Opiniones y Reseñas de Clientes</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Opiniones 100% verificadas de compradores</p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="alert('Gracias por tu interés. En esta versión demo puedes calificar directamente desde tu historial de pedidos.')">
+            ✍️ Escribir Reseña
+        </button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+            <div class="flex-between" style="margin-bottom: 8px;">
+                <strong>Alejandro Torres</strong>
+                <span class="stars">★★★★★</span>
+            </div>
+            <p style="font-size: 0.88rem; color: #475569; line-height: 1.6;">
+                "Excelente producto, llegó en menos de 2 días y el empaque venía perfectamente sellado. Superó mis expectativas en calidad de materiales y rendimiento."
+            </p>
+            <span style="font-size: 0.75rem; color: #10b981; font-weight: 600;">✓ Compra verificada</span>
+        </div>
+
+        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+            <div class="flex-between" style="margin-bottom: 8px;">
+                <strong>Mariana S.</strong>
+                <span class="stars">★★★★★</span>
+            </div>
+            <p style="font-size: 0.88rem; color: #475569; line-height: 1.6;">
+                "La atención y el seguimiento de la orden fue impecable. Muy recomendado, además pude aplicar el cupón de descuento sin problemas."
+            </p>
+            <span style="font-size: 0.75rem; color: #10b981; font-weight: 600;">✓ Compra verificada</span>
+        </div>
+    </div>
+</section>
+
+<!-- Related Products -->
+<% if (relatedProducts && relatedProducts.length > 0) { %>
+    <section style="margin-bottom: 48px;">
+        <h2 style="margin-bottom: 20px;">Productos Relacionados</h2>
+        <div class="products-grid">
+            <% relatedProducts.forEach(p => { %>
+                <% 
+                    const relDiscount = Number(p.discount) || 0;
+                    const relPrice = p.price * (1 - relDiscount / 100);
+                %>
+                <div class="product-card">
+                    <a href="/index.php?action=product&id=<%= p.id %>" class="card-img-wrapper">
+                        <img src="<%= p.image %>" alt="<%= p.name %>">
+                    </a>
+                    <div class="card-body">
+                        <div class="card-category"><%= p.category %></div>
+                        <a href="/index.php?action=product&id=<%= p.id %>">
+                            <h3 class="card-title"><%= p.name %></h3>
+                        </a>
+                        <div class="card-price-row">
+                            <span class="price-main">$<%= relPrice.toLocaleString('es-MX', { minimumFractionDigits: 2 }) %></span>
+                        </div>
+                        <a href="/index.php?action=product&id=<%= p.id %>" class="btn btn-primary btn-block btn-sm">
+                            Ver Producto
+                        </a>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    </section>
+<% } %>
+
+<%- include('footer') %>

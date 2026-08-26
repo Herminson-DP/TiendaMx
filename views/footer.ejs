@@ -1,11 +1,85 @@
     </main>
 
-    <footer>
-        <div class="container text-center">
-            <p>&copy; <%= currentYear %> <%= config.store_name || 'Tienda Online' %> - MVC Sin Base de Datos</p>
+    <!-- Global Rich E-Commerce Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <!-- Column 1: Store Bio -->
+                <div class="footer-col">
+                    <div class="brand" style="color: white; margin-bottom: 16px;">
+                        <div class="brand-icon">🛍️</div>
+                        <span><%= config.store_name || 'TiendaMx' %></span>
+                    </div>
+                    <p style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 20px;">
+                        <%= config.tagline || 'Líderes en e-commerce con la mejor selección de productos de alta calidad, envíos rápidos y atención personalizada.' %>
+                    </p>
+                    <div class="flex-gap">
+                        <span style="font-size: 1.3rem;">🌐</span>
+                        <span style="font-size: 1.3rem;">📱</span>
+                        <span style="font-size: 1.3rem;">✉️</span>
+                        <span style="font-size: 1.3rem;">💬</span>
+                    </div>
+                </div>
+
+                <!-- Column 2: Quick Links -->
+                <div class="footer-col">
+                    <h4>Categorías Populares</h4>
+                    <ul class="footer-links">
+                        <li><a href="/index.php?category=Electrónica">Electrónica & Laptops</a></li>
+                        <li><a href="/index.php?category=Audio">Audio & Audífonos</a></li>
+                        <li><a href="/index.php?category=Hogar+%26+Oficina">Hogar & Oficina</a></li>
+                        <li><a href="/index.php?category=Moda+%26+Deportes">Moda & Deportes</a></li>
+                        <li><a href="/index.php?category=Fotografía">Fotografía & Cámaras</a></li>
+                    </ul>
+                </div>
+
+                <!-- Column 3: Customer Care -->
+                <div class="footer-col">
+                    <h4>Atención al Cliente</h4>
+                    <ul class="footer-links">
+                        <li><a href="/index.php?action=orders">Seguimiento de Pedidos</a></li>
+                        <li><a href="/index.php?action=wishlist">Lista de Favoritos</a></li>
+                        <li><a href="/index.php?action=cart">Mi Carrito de Compras</a></li>
+                        <li><a href="/index.php?action=admin">Acceso Administrativo</a></li>
+                        <li><a href="#">Términos y Condiciones</a></li>
+                    </ul>
+                </div>
+
+                <!-- Column 4: Newsletter & Guarantee -->
+                <div class="footer-col">
+                    <h4>Únete al Club de Ofertas</h4>
+                    <p style="font-size: 0.85rem; margin-bottom: 14px;">
+                        Recibe descuentos exclusivos de hasta 40% y acceso anticipado a promociones.
+                    </p>
+                    <form onsubmit="event.preventDefault(); alert('¡Gracias por suscribirte al newsletter de <%= config.store_name || "Tienda Colombia" %>!'); this.reset();" class="flex-gap" style="margin-bottom: 14px;">
+                        <input type="email" placeholder="tu@correo.com" required style="padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; width: 100%; font-size: 0.88rem;">
+                        <button type="submit" class="btn btn-primary btn-sm" style="white-space: nowrap;">Unirme</button>
+                    </form>
+                    <div style="font-size: 0.78rem; color: #64748b;">
+                        🔒 Tus datos están protegidos con cifrado SSL de 256 bits.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Bottom -->
+            <div class="footer-bottom">
+                <div>
+                    &copy; <%= currentYear %> <%= config.store_name || 'Tienda Colombia' %>. Todos los derechos reservados.
+                </div>
+                <div class="payment-badges">
+                    <span class="pay-badge">📱 PSE</span>
+                    <span class="pay-badge">📲 Nequi</span>
+                    <span class="pay-badge">📲 Daviplata</span>
+                    <span class="pay-badge">🏦 Bancolombia</span>
+                    <span class="pay-badge">💳 VISA / MC</span>
+                    <span class="pay-badge">💳 AMEX</span>
+                    <span class="pay-badge">💵 Efecty</span>
+                    <span class="pay-badge">🅿️ PayPal</span>
+                </div>
+            </div>
         </div>
     </footer>
 
-    <script src="/js/main.js"></script>
+    <script src="/public/js/main.js"></script>
 </body>
 </html>

@@ -1,28 +1,95 @@
 <%- include('header') %>
 
-<h2>Historial de Compras</h2>
+<div class="flex-between" style="margin-bottom: 28px;">
+    <div>
+        <h2>Historial de Pedidos 📦</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">Consulta el estado en tiempo real y el detalle de todas tus compras.</p>
+    </div>
+    <a href="/index.php" class="btn btn-secondary btn-sm">Ir al Catálogo</a>
+</div>
 
 <% if (!orders || orders.length === 0) { %>
-    <p>No hay órdenes registradas aún.</p>
+    <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 16px; border: 1px solid var(--border);">
+        <div style="font-size: 3.5rem; margin-bottom: 16px;">📦</div>
+        <h3>Aún no tienes pedidos registrados</h3>
+        <p style="color: var(--text-muted); margin: 8px 0 24px;">Cuando realices una compra, podrás ver aquí el número de rastreo y el estado de entrega.</p>
+        <a href="/index.php" class="btn btn-primary">Comenzar a Comprar</a>
+    </div>
 <% } else { %>
-    <% orders.forEach(order => { %>
-        <div class="card-order">
-            <div class="flex-between">
-                <h4>Orden: <%= order.id %></h4>
-                <span><%= order.date %></span>
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <% orders.forEach(order => { %>
+            <div style="background: white; border-radius: 16px; border: 1px solid var(--border); padding: 24px; box-shadow: var(--shadow-sm);">
+                <!-- Header of Order -->
+                <div class="flex-between" style="border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <div class="flex-gap" style="margin-bottom: 4px;">
+                            <h3 style="font-size: 1.15rem;">Orden #<%= order.id %></h3>
+                            <!-- Status Badge -->
+                            <% 
+                                let statusBg = '#e0e7ff';
+                                let statusColor = '#3730a3';
+                                if (order.status === 'Entregado') { statusBg = '#d1fae5'; statusColor = '#065f46'; }
+                                else if (order.status === 'Enviado') { statusBg = '#fef3c7'; statusColor = '#92400e'; }
+                                else if (order.status === 'Cancelado') { statusBg = '#fee2e2'; statusColor = '#991b1b'; }
+                            %>
+                            <span style="background: <%= statusBg %>; color: <%= statusColor %>; padding: 4px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 700;">
+                                ● <%= order.status || 'Confirmado' %>
+                            </span>
+                        </div>
+                        <span style="font-size: 0.85rem; color: var(--text-muted);">
+                            Realizado el <%= order.date %> • Guía: <strong style="color: var(--primary);"><%= order.trackingNumber || 'COL-PENDIENTE' %></strong>
+                        </span>
+                    </div>
+
+                    <div style="text-align: right;">
+                        <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Total del Pedido</span>
+                        <strong style="font-size: 1.3rem; color: var(--secondary);"><%= formatMoney(order.total) %> COP</strong>
+                    </div>
+                </div>
+
+                <!-- Customer and Items details -->
+                <div style="display: flex; gap: 24px; margin-bottom: 16px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 260px;">
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Destino:</span>
+                        <p style="font-size: 0.88rem; color: var(--text-main); margin-top: 2px;">
+                            <strong><%= order.customer.name %></strong> — <%= order.customer.address %>
+                        </p>
+                    </div>
+                    <div style="flex: 1; min-width: 260px;">
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Método de Pago:</span>
+                        <p style="font-size: 0.88rem; color: var(--text-main); margin-top: 2px;">
+                            <%= order.paymentMethod || 'PSE' %> (<%= order.shippingMethod || 'Estándar Colombia' %>)
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Products list in order -->
+                <div style="background: #f8fafc; border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+                    <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; display: block;">
+                        Artículos incluidos (<%= order.items.length %>):
+                    </span>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <% order.items.forEach(item => { %>
+                            <div class="flex-between" style="font-size: 0.88rem;">
+                                <span><%= item.quantity %>x <strong><%= item.product.name %></strong></span>
+                                <span><%= formatMoney(item.total) %></span>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex-between">
+                    <a href="/index.php?action=receipt&id=<%= order.id %>" class="btn btn-secondary btn-sm">
+                        📄 Ver Recibo Completo
+                    </a>
+                    <a href="/index.php" class="btn btn-primary btn-sm">
+                        🛒 Volver a Comprar
+                    </a>
+                </div>
             </div>
-            <p><strong>Cliente:</strong> <%= order.customer.name %> (<%= order.customer.email %>)</p>
-            <p><strong>Total:</strong> $<%= Number(order.total).toFixed(2) %></p>
-            <details>
-                <summary>Ver Detalles</summary>
-                <ul>
-                    <% order.items.forEach(item => { %>
-                        <li><%= item.quantity %>x <%= item.product.name %> - $<%= Number(item.total).toFixed(2) %></li>
-                    <% }); %>
-                </ul>
-            </details>
-        </div>
-    <% }); %>
+        <% }); %>
+    </div>
 <% } %>
 
 <%- include('footer') %>

@@ -1,49 +1,252 @@
 <%- include('header') %>
 
-<div class="catalog-header">
-    <h2>Catálogo de Productos</h2>
-    <form action="/index.php" method="GET" class="search-form flex-gap">
-        <input type="text" name="search" placeholder="Buscar por nombre o especificaciones..." value="<%= search %>">
-        <select name="category">
-            <option value="">Todas las categorías</option>
-            <% categories.forEach(cat => { %>
-                <option value="<%= cat %>" <%= selectedCategory === cat ? 'selected' : '' %>>
-                    <%= cat %>
-                </option>
-            <% }); %>
-        </select>
-        <button type="submit" class="btn">Filtrar</button>
-        <a href="/index.php" class="btn btn-secondary">Limpiar</a>
-    </form>
+<!-- Promotional Hero Banner (Vibrant, High Energy & Eye-catching) -->
+<section class="hero-banner">
+    <div>
+        <div class="hero-tag">🔥 OFERTAS EXCLUSIVAS DE TEMPORADA</div>
+        <h1 class="hero-title">Tu Tienda Online con <span>Precios Increíbles</span></h1>
+        <p class="hero-desc">
+            Equipos de cómputo, audio de alta fidelidad, moda y estilo con hasta <strong>25% de descuento</strong>, garantía oficial y envíos exprés a todo el país.
+        </p>
+
+        <div class="hero-buttons">
+            <a href="#catalogo" class="btn btn-accent btn-lg">🛍️ Explorar Catálogo</a>
+            <div class="hero-coupon-pill flex-gap">
+                <span>🎁 Cupón Activo:</span>
+                <strong class="btn-copy-code" data-code="BIENVENIDO10" style="cursor: pointer;" title="Haz clic para copiar">BIENVENIDO10</strong>
+                <span style="font-size: 0.82rem; font-weight: 700; color: #fde047;">(-10%)</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="hero-visual">
+        <div class="hero-img-box">
+            <img src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=80" alt="MacBook Pro">
+        </div>
+    </div>
+</section>
+
+<!-- Trust & Value Pillars (4 Distinct Colorful Cards) -->
+<section class="features-bar">
+    <div class="feature-item feature-blue">
+        <div class="feature-icon">🚚</div>
+        <div class="feature-text">
+            <h4>Envío Rápido a toda Colombia</h4>
+            <p>Gratis en compras superiores a <%= formatMoney(config.free_shipping_threshold || 200000) %> COP</p>
+        </div>
+    </div>
+    <div class="feature-item feature-green">
+        <div class="feature-icon">🛡️</div>
+        <div class="feature-text">
+            <h4>Garantía Total de 30 Días</h4>
+            <p>Devolución 100% garantizada y soporte directo</p>
+        </div>
+    </div>
+    <div class="feature-item feature-purple">
+        <div class="feature-icon">💳</div>
+        <div class="feature-text">
+            <h4>Pagos con PSE, Nequi y Tarjetas</h4>
+            <p>PSE, Nequi, Daviplata, Bancolombia y hasta 12 cuotas</p>
+        </div>
+    </div>
+    <div class="feature-item feature-amber">
+        <div class="feature-icon">🎧</div>
+        <div class="feature-text">
+            <h4>Atención Experta 24/7</h4>
+            <p>Asesoría personalizada por WhatsApp y chat</p>
+        </div>
+    </div>
+</section>
+
+<!-- Category Pills Navigation (Organized & Colorful) -->
+<div class="categories-nav" id="catalogo">
+    <a href="/index.php" class="category-pill <%= !selectedCategory ? 'active' : '' %>">
+        <span>✨ Todos</span>
+        <span class="category-count"><%= totalProductsCount %></span>
+    </a>
+    <% categories.forEach(cat => { %>
+        <a href="/index.php?category=<%= encodeURIComponent(cat) %>" class="category-pill <%= selectedCategory === cat ? 'active' : '' %>">
+            <span>
+                <% if (cat.includes('Elec')) { %>💻<% } else if (cat.includes('Audio')) { %>🎧<% } else if (cat.includes('Hogar')) { %>🏠<% } else if (cat.includes('Moda')) { %>👟<% } else if (cat.includes('Foto')) { %>📷<% } else { %>🏷️<% } %>
+                <%= cat %>
+            </span>
+            <span class="category-count"><%= categoryCounts[cat] || 0 %></span>
+        </a>
+    <% }); %>
 </div>
 
-<div class="grid-products">
-    <% if (products.length === 0) { %>
-        <p>No se encontraron productos.</p>
-    <% } else { %>
-        <% products.forEach(p => { %>
-            <div class="card-product">
-                <img src="<%= p.image %>" alt="<%= p.name %>" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60'">
-                <h3><%= p.name %></h3>
-                <span class="badge"><%= p.category %></span>
-                <p class="description"><%= p.description %></p>
-                <p class="specs"><strong>Esp:</strong> <%= p.specs %></p>
-                <div class="price-box">
-                    <% if (p.discount > 0) { %>
-                        <span class="price-original">$<%= Number(p.price).toFixed(2) %></span>
-                        <span class="price-final">$<%= (p.price * (1 - p.discount/100)).toFixed(2) %></span>
-                        <span class="discount">-<%= p.discount %>%</span>
-                    <% } else { %>
-                        <span class="price-final">$<%= Number(p.price).toFixed(2) %></span>
-                    <% } %>
-                </div>
-                <form action="/index.php?action=add-to-cart" method="POST">
-                    <input type="hidden" name="product_id" value="<%= p.id %>">
-                    <button type="submit" class="btn btn-block">Agregar al Carrito</button>
-                </form>
+<!-- Advanced Search & Filter Controls -->
+<section class="filter-card">
+    <form action="/index.php" method="GET" class="filter-form">
+        <!-- Preserve category if selected -->
+        <% if (selectedCategory) { %>
+            <input type="hidden" name="category" value="<%= selectedCategory %>">
+        <% } %>
+
+        <div class="filter-group">
+            <span class="filter-label">🎯 Ordenar por:</span>
+            <select name="sort" class="filter-select" onchange="this.form.submit()">
+                <option value="featured" <%= sort === 'featured' ? 'selected' : '' %>>⭐ Destacados y Relevancia</option>
+                <option value="price_asc" <%= sort === 'price_asc' ? 'selected' : '' %>>💵 Precio: Menor a Mayor</option>
+                <option value="price_desc" <%= sort === 'price_desc' ? 'selected' : '' %>>💎 Precio: Mayor a Menor</option>
+                <option value="discount" <%= sort === 'discount' ? 'selected' : '' %>>🔥 Mayor Descuento (%)</option>
+                <option value="rating" <%= sort === 'rating' ? 'selected' : '' %>>🏆 Mejor Calificados</option>
+                <option value="newest" <%= sort === 'newest' ? 'selected' : '' %>>🆕 Más Nuevos</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <span class="filter-label">💲 Rango:</span>
+            <div class="price-inputs">
+                <input type="number" name="min_price" placeholder="Mín $" value="<%= minPrice %>" class="filter-input" step="50000">
+                <span>-</span>
+                <input type="number" name="max_price" placeholder="Máx $" value="<%= maxPrice %>" class="filter-input" step="50000">
             </div>
-        <% }); %>
+        </div>
+
+        <div class="filter-group">
+            <label class="checkbox-label">
+                <input type="checkbox" name="in_stock" value="1" <%= inStock ? 'checked' : '' %> onchange="this.form.submit()">
+                <span>Solo en stock disponible</span>
+            </label>
+        </div>
+
+        <div class="filter-group">
+            <button type="submit" class="btn btn-primary btn-sm">Aplicar Filtros</button>
+            <% if (search || selectedCategory || minPrice || maxPrice || inStock || sort !== 'featured') { %>
+                <a href="/index.php" class="btn btn-secondary btn-sm">Limpiar</a>
+            <% } %>
+        </div>
+    </form>
+</section>
+
+<!-- Products Grid Section -->
+<section>
+    <div class="flex-between" style="margin-bottom: 24px;">
+        <h2>
+            <% if (selectedCategory) { %>
+                <%= selectedCategory %>
+            <% } else if (search) { %>
+                Resultados para "<%= search %>"
+            <% } else { %>
+                Catálogo de Productos
+            <% } %>
+            <span style="font-size: 1rem; color: var(--text-muted); font-weight: 600;">(<%= products.length %> <%= products.length === 1 ? 'producto' : 'productos' %>)</span>
+        </h2>
+    </div>
+
+    <% if (products.length === 0) { %>
+        <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 20px; border: 1.5px solid var(--border); box-shadow: var(--shadow-sm);">
+            <div style="font-size: 3.5rem; margin-bottom: 16px;">🔎</div>
+            <h3 style="font-size: 1.4rem; margin-bottom: 8px;">No encontramos productos que coincidan</h3>
+            <p style="color: var(--text-muted); margin-bottom: 24px;">Intenta cambiar los filtros o el término de búsqueda.</p>
+            <a href="/index.php" class="btn btn-primary">Ver Todos los Productos</a>
+        </div>
+    <% } else { %>
+        <div class="products-grid">
+            <% products.forEach(p => { %>
+                <% 
+                    const discount = Number(p.discount) || 0;
+                    const finalPrice = p.price * (1 - discount / 100);
+                    const savingAmount = p.price - finalPrice;
+                    const isWishlisted = wishlist && wishlist.includes(p.id);
+                    const stock = p.stock !== undefined ? p.stock : 10;
+                    
+                    let badgeClass = 'badge-custom';
+                    if (p.badge && p.badge.toLowerCase().includes('vendido')) badgeClass = 'badge-gold';
+                    else if (p.badge && p.badge.toLowerCase().includes('nuevo')) badgeClass = 'badge-emerald';
+                    else if (p.badge && p.badge.toLowerCase().includes('oferta')) badgeClass = 'badge-discount';
+                    else if (p.badge && p.badge.toLowerCase().includes('ergon')) badgeClass = 'badge-cyan';
+                %>
+                <div class="product-card">
+                    <!-- Badges -->
+                    <div class="card-badges">
+                        <% if (discount > 0) { %>
+                            <span class="badge-tag badge-discount">-<%= discount %>% OFF</span>
+                        <% } %>
+                        <% if (p.badge) { %>
+                            <span class="badge-tag <%= badgeClass %>"><%= p.badge %></span>
+                        <% } %>
+                    </div>
+
+                    <!-- Wishlist Toggle -->
+                    <form action="/index.php?action=toggle-wishlist" method="POST" style="margin: 0;">
+                        <input type="hidden" name="product_id" value="<%= p.id %>">
+                        <button type="submit" class="btn-wishlist <%= isWishlisted ? 'active' : '' %>" title="<%= isWishlisted ? 'Quitar de favoritos' : 'Agregar a favoritos' %>">
+                            <%= isWishlisted ? '❤️' : '🤍' %>
+                        </button>
+                    </form>
+
+                    <!-- Image Thumbnail with Link -->
+                    <a href="/index.php?action=product&id=<%= p.id %>" class="card-img-wrapper">
+                        <img 
+                            src="<%= p.image %>" 
+                            alt="<%= p.name %>" 
+                            loading="lazy"
+                            onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80'"
+                        >
+                    </a>
+
+                    <!-- Card Body Info -->
+                    <div class="card-body">
+                        <div class="card-category"><%= p.category %></div>
+                        <a href="/index.php?action=product&id=<%= p.id %>">
+                            <h3 class="card-title"><%= p.name %></h3>
+                        </a>
+
+                        <!-- Rating Stars -->
+                        <div class="card-rating">
+                            <span class="stars">★★★★★</span>
+                            <span style="font-weight: 800; color: var(--secondary);"><%= Number(p.rating || 4.8).toFixed(1) %></span>
+                            <span>(<%= p.reviewsCount || 12 %> reseñas)</span>
+                        </div>
+
+                        <p class="card-desc"><%= p.description %></p>
+
+                        <!-- Price Section -->
+                        <div class="card-price-row">
+                            <span class="price-main"><%= formatMoney(finalPrice) %></span>
+                            <% if (discount > 0) { %>
+                                <span class="price-old"><%= formatMoney(p.price) %></span>
+                                <span class="price-saving">Ahorras <%= formatMoney(savingAmount) %></span>
+                            <% } %>
+                        </div>
+
+                        <!-- Stock Status -->
+                        <div class="card-stock">
+                            <% if (stock > 5) { %>
+                                <span class="stock-in">● Disponible en inventario (<%= stock %> unid.)</span>
+                            <% } else if (stock > 0) { %>
+                                <span class="stock-low">⚡ ¡Últimas <%= stock %> unidades disponibles!</span>
+                            <% } else { %>
+                                <span class="stock-out">✕ Agotado temporalmente</span>
+                            <% } %>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="card-actions">
+                            <% if (stock > 0) { %>
+                                <form action="/index.php?action=add-to-cart" method="POST" style="margin: 0; display: contents;">
+                                    <input type="hidden" name="product_id" value="<%= p.id %>">
+                                    <input type="hidden" name="return_url" value="/index.php">
+                                    <button type="submit" class="btn btn-primary btn-block">
+                                        🛒 Agregar al Carrito
+                                    </button>
+                                </form>
+                            <% } else { %>
+                                <button type="button" class="btn btn-secondary btn-block" disabled>
+                                    Agotado
+                                </button>
+                            <% } %>
+                            <a href="/index.php?action=product&id=<%= p.id %>" class="btn btn-secondary" title="Ver Detalles">
+                                👁️
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
     <% } %>
-</div>
+</section>
 
 <%- include('footer') %>

@@ -1,34 +1,330 @@
 <%- include('header') %>
 
-<h2>Proceso de Pago</h2>
+<div style="margin-bottom: 24px;">
+    <h2>Finalizar Pedido y Pago Seguro 🔒</h2>
+    <p style="color: var(--text-muted); font-size: 0.95rem;">Completa tus datos de entrega en Colombia y selecciona tu método de pago preferido.</p>
+</div>
 
-<div class="checkout-grid">
-    <form action="/index.php?action=process-checkout" method="POST" class="form-box">
-        <h3>Datos del Cliente</h3>
-        <div class="form-group">
-            <label>Nombre Completo:</label>
-            <input type="text" name="name" required>
-        </div>
-        <div class="form-group">
-            <label>Correo Electrónico:</label>
-            <input type="email" name="email" required>
-        </div>
-        <div class="form-group">
-            <label>Dirección de Envío:</label>
-            <textarea name="address" required></textarea>
-        </div>
-        <button type="submit" class="btn btn-block">Finalizar Compra</button>
-    </form>
+<div class="checkout-layout">
+    <!-- Left: Form Sections (Customer Info, Shipping, Payment) -->
+    <div>
+        <form action="/index.php?action=process-checkout" method="POST" id="checkoutForm">
+            <!-- Hidden inputs -->
+            <input type="hidden" name="payment_method" id="selectedPaymentMethod" value="PSE (Pagos Seguros en Línea)">
+            <input type="hidden" name="shipping_type" value="<%= shippingType || 'standard' %>">
 
-    <div class="order-summary">
-        <h3>Resumen del Pedido</h3>
-        <ul>
-            <% details.items.forEach(item => { %>
-                <li><%= item.quantity %>x <%= item.product.name %> - $<%= Number(item.total).toFixed(2) %></li>
-            <% }); %>
-        </ul>
-        <hr>
-        <p>Total a pagar: <strong>$<%= Number(details.final_total).toFixed(2) %></strong></p>
+            <!-- Section 1: Customer Contact & Shipping Details -->
+            <div class="form-section-card">
+                <div class="form-section-title">
+                    <div class="section-num">1</div>
+                    <h3>Datos del Destinatario y Dirección en Colombia</h3>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>Nombre(s) *</label>
+                        <input type="text" name="name" placeholder="Ej. Andrés Felipe" required value="Andrés Felipe">
+                    </div>
+                    <div class="form-field">
+                        <label>Apellidos *</label>
+                        <input type="text" name="lastname" placeholder="Ej. Restrepo Osorio" required value="Restrepo Osorio">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-field">
+                        <label>Correo Electrónico *</label>
+                        <input type="email" name="email" placeholder="andres@ejemplo.com" required value="andres.restrepo@email.com">
+                    </div>
+                    <div class="form-field">
+                        <label>Celular / WhatsApp *</label>
+                        <input type="tel" name="phone" placeholder="+57 310 456 7890" required value="+57 310 456 7890">
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label>Dirección Completa (Calle/Carrera, Número, Barrio, Apto/Casa) *</label>
+                    <input type="text" name="address" placeholder="Cra. 15 # 93-60, Apto 402, Chicó Norte" required value="Cra. 15 # 93-60, Chicó Norte">
+                </div>
+
+                <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
+                    <div class="form-field">
+                        <label>Ciudad / Municipio *</label>
+                        <input type="text" name="city" placeholder="Bogotá D.C." required value="Bogotá D.C.">
+                    </div>
+                    <div class="form-field">
+                        <label>Departamento *</label>
+                        <select name="state" required style="padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-main);">
+                            <option value="Bogotá D.C." selected>Bogotá D.C.</option>
+                            <option value="Antioquia">Antioquia (Medellín)</option>
+                            <option value="Valle del Cauca">Valle del Cauca (Cali)</option>
+                            <option value="Atlántico">Atlántico (Barranquilla)</option>
+                            <option value="Santander">Santander (Bucaramanga)</option>
+                            <option value="Bolívar">Bolívar (Cartagena)</option>
+                            <option value="Cundinamarca">Cundinamarca</option>
+                            <option value="Risaralda">Risaralda (Pereira)</option>
+                            <option value="Caldas">Caldas (Manizales)</option>
+                            <option value="Tolima">Tolima (Ibagué)</option>
+                            <option value="Otro">Otro Departamento</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Código Postal *</label>
+                        <input type="text" name="zip" placeholder="110221" required value="110221">
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label>Instrucciones de Entrega (Opcional)</label>
+                    <textarea name="notes" rows="2" placeholder="Ej. Dejar con portería o vigilancia del edificio..."></textarea>
+                </div>
+            </div>
+
+            <!-- Section 2: Shipping Method -->
+            <div class="form-section-card">
+                <div class="form-section-title">
+                    <div class="section-num">2</div>
+                    <h3>Método de Envío en Colombia</h3>
+                </div>
+
+                <div class="shipping-options">
+                    <label class="shipping-option-card <%= shippingType !== 'express' ? 'selected' : '' %>">
+                        <div class="flex-between">
+                            <strong>📦 Envío Nacional Estándar (Servientrega / Coordinadora)</strong>
+                            <span style="color: var(--accent); font-weight: 700;">
+                                <%= (details.subtotal >= details.freeThreshold || (details.coupon && details.coupon.type === 'free_shipping')) ? 'GRATIS' : `${formatMoney(config.shipping || 18000)} COP` %>
+                            </span>
+                        </div>
+                        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">Entrega en 2 a 4 días hábiles con guía de seguimiento nacional.</p>
+                        <input type="radio" name="shipping_selector" value="standard" <%= shippingType !== 'express' ? 'checked' : '' %> style="display: none;">
+                    </label>
+
+                    <label class="shipping-option-card <%= shippingType === 'express' ? 'selected' : '' %>">
+                        <div class="flex-between">
+                            <strong>⚡ Envío Express Colombia (24-48 horas)</strong>
+                            <span style="color: var(--primary); font-weight: 700;">
+                                <%= (details.subtotal >= details.freeThreshold || (details.coupon && details.coupon.type === 'free_shipping')) ? `${formatMoney(12000)} COP` : `${formatMoney(Number(config.shipping || 18000) + 12000)} COP` %>
+                            </span>
+                        </div>
+                        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">Despacho prioritario el mismo día para principales ciudades.</p>
+                        <input type="radio" name="shipping_selector" value="express" <%= shippingType === 'express' ? 'checked' : '' %> style="display: none;">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Section 3: Payment Method -->
+            <div class="form-section-card">
+                <div class="form-section-title">
+                    <div class="section-num">3</div>
+                    <h3>Método de Pago Seguro</h3>
+                </div>
+
+                <!-- Payment Method Selector Tabs -->
+                <div class="payment-tabs">
+                    <button type="button" class="payment-tab-btn active" data-method="pse" data-label="PSE (Pagos Seguros en Línea)">
+                        📱 PSE / Bancos
+                    </button>
+                    <button type="button" class="payment-tab-btn" data-method="nequi" data-label="Nequi / Daviplata">
+                        📲 Nequi / Daviplata
+                    </button>
+                    <button type="button" class="payment-tab-btn" data-method="card" data-label="Tarjeta de Crédito / Débito">
+                        💳 Tarjeta de Crédito
+                    </button>
+                    <button type="button" class="payment-tab-btn" data-method="efecty" data-label="Efectivo Efecty / SuRed">
+                        💵 Efecty / SuRed
+                    </button>
+                    <button type="button" class="payment-tab-btn" data-method="paypal" data-label="PayPal">
+                        🅿️ PayPal
+                    </button>
+                </div>
+
+                <!-- Pane 1: PSE -->
+                <div class="payment-pane" id="pane-pse" style="padding: 20px; background: #f8fafc; border-radius: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+                        <span style="font-size: 1.8rem;">📱</span>
+                        <div>
+                            <h4 style="margin: 0;">PSE - Proveedor de Servicios Electrónicos</h4>
+                            <p style="margin: 0; font-size: 0.82rem; color: var(--text-muted);">Paga al instante debitando directamente de tu cuenta bancaria colombiana.</p>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label>Selecciona tu Banco *</label>
+                        <select style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: white;">
+                            <option>Bancolombia</option>
+                            <option>Davivienda</option>
+                            <option>Banco de Bogotá</option>
+                            <option>BBVA Colombia</option>
+                            <option>Banco de Occidente</option>
+                            <option>Scotiabank Colpatria</option>
+                            <option>Banco AV Villas</option>
+                            <option>Banco Popular</option>
+                            <option>Lulo Bank / Nu Colombia</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label>Tipo de Cliente</label>
+                            <select style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: white;">
+                                <option>Persona Natural</option>
+                                <option>Persona Jurídica (Empresa)</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Cédula de Ciudadanía / NIT *</label>
+                            <input type="text" placeholder="1020304050" value="1032456789">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pane 2: Nequi / Daviplata -->
+                <div class="payment-pane" id="pane-nequi" style="display: none; padding: 20px; background: #f8fafc; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 8px;">📲</div>
+                    <h4>Paga con Nequi o Daviplata</h4>
+                    <p style="color: var(--text-muted); font-size: 0.88rem; margin: 8px 0 16px;">
+                        Ingresa tu número de celular registrado para recibir la solicitud de pago push en tu billetera digital.
+                    </p>
+                    <div class="form-field" style="max-width: 340px; margin: 0 auto 12px; text-align: left;">
+                        <label>Número Celular Registrado en Nequi/Daviplata *</label>
+                        <input type="tel" placeholder="310 456 7890" value="3104567890">
+                    </div>
+                </div>
+
+                <!-- Pane 3: Credit / Debit Card Simulator -->
+                <div class="payment-pane" id="pane-card" style="display: none;">
+                    <!-- Virtual Card Preview -->
+                    <div class="virtual-card">
+                        <div class="flex-between">
+                            <div class="virtual-card-chip"></div>
+                            <span style="font-size: 1.2rem; font-weight: 800;">VISA / MC</span>
+                        </div>
+                        <div class="virtual-card-number" id="cardNumPreview">
+                            •••• •••• •••• ••••
+                        </div>
+                        <div class="virtual-card-footer">
+                            <div>
+                                <span style="font-size: 0.65rem; display: block; opacity: 0.7;">TITULAR</span>
+                                <span id="cardHolderPreview">ANDRÉS RESTREPO</span>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.65rem; display: block; opacity: 0.7;">EXPIRA</span>
+                                <span id="cardExpPreview">12/28</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>Número de Tarjeta *</label>
+                        <input type="text" id="cardNumberInput" placeholder="4000 1234 5678 9010" maxlength="19" value="4532 8921 7340 1928">
+                    </div>
+
+                    <div class="form-field">
+                        <label>Nombre impreso en la tarjeta *</label>
+                        <input type="text" id="cardHolderInput" placeholder="ANDRÉS RESTREPO" value="Andrés Restrepo">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label>Fecha de Vencimiento (MM/AA) *</label>
+                            <input type="text" id="cardExpInput" placeholder="12/28" maxlength="5" value="12/28">
+                        </div>
+                        <div class="form-field">
+                            <label>Código de Seguridad (CVV) *</label>
+                            <input type="password" placeholder="123" maxlength="4" value="842">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pane 4: Efecty -->
+                <div class="payment-pane" id="pane-efecty" style="display: none; padding: 24px; background: #f8fafc; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 8px;">💵</div>
+                    <h4>Pago en Efectivo en Puntos Efecty / SuRed</h4>
+                    <p style="color: var(--text-muted); font-size: 0.88rem;">Se generará un número de convenio y referencia de pago para pagar en más de 10.000 puntos en toda Colombia.</p>
+                </div>
+
+                <!-- Pane 5: PayPal -->
+                <div class="payment-pane" id="pane-paypal" style="display: none; padding: 24px; background: #f8fafc; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 8px;">🅿️</div>
+                    <h4>Pago Internacional con PayPal</h4>
+                    <p style="color: var(--text-muted); font-size: 0.88rem; margin: 8px 0 16px;">
+                        Serás redirigido de forma segura a PayPal para autorizar tu compra.
+                    </p>
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <button type="submit" class="btn btn-accent btn-block btn-lg" style="font-size: 1.15rem; font-weight: 700; padding: 16px;">
+                        🔒 Confirmar y Pagar <%= formatMoney(details.final_total) %> COP
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Right: Order Summary Sidebar -->
+    <div>
+        <div class="order-summary-card">
+            <h3 style="font-size: 1.25rem; margin-bottom: 18px;">Resumen del Pedido</h3>
+
+            <!-- Products List -->
+            <div style="max-height: 280px; overflow-y: auto; margin-bottom: 18px;">
+                <% details.items.forEach(item => { %>
+                    <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border);">
+                        <img src="<%= item.product.image %>" alt="<%= item.product.name %>" style="width: 54px; height: 54px; border-radius: 8px; object-fit: cover;">
+                        <div style="flex: 1;">
+                            <h5 style="font-size: 0.9rem; margin-bottom: 2px;"><%= item.product.name %></h5>
+                            <span style="font-size: 0.78rem; color: var(--text-muted);"><%= item.quantity %> x <%= formatMoney(item.unit_price) %></span>
+                        </div>
+                        <strong><%= formatMoney(item.total) %></strong>
+                    </div>
+                <% }); %>
+            </div>
+
+            <!-- Coupon Box in Checkout -->
+            <div class="coupon-box" style="margin-top: 0;">
+                <% if (details.coupon) { %>
+                    <div class="coupon-pill-active">
+                        <span>🏷️ <%= details.coupon.code %></span>
+                        <a href="/index.php?action=remove-coupon&redirect_to=checkout" style="color: #991b1b; text-decoration: none; font-weight: 700;">✕</a>
+                    </div>
+                <% } else { %>
+                    <form action="/index.php?action=apply-coupon" method="POST" class="coupon-input-group">
+                        <input type="hidden" name="redirect_to" value="checkout">
+                        <input type="text" name="coupon_code" placeholder="Código de descuento" required class="filter-input" style="flex: 1;">
+                        <button type="submit" class="btn btn-primary btn-sm">Aplicar</button>
+                    </form>
+                <% } %>
+            </div>
+
+            <div class="summary-row">
+                <span>Subtotal</span>
+                <span><%= formatMoney(details.subtotal) %></span>
+            </div>
+
+            <% if (details.discountAmount > 0) { %>
+                <div class="summary-row" style="color: #059669; font-weight: 600;">
+                    <span>Descuento (<%= details.coupon.code %>)</span>
+                    <span>-<%= formatMoney(details.discountAmount) %></span>
+                </div>
+            <% } %>
+
+            <div class="summary-row">
+                <span>Impuestos IVA (<%= config.tax || 19 %>%)</span>
+                <span><%= formatMoney(details.tax) %></span>
+            </div>
+
+            <div class="summary-row">
+                <span>Envío (<%= shippingType === 'express' ? 'Express Colombia' : 'Estándar' %>)</span>
+                <span><%= details.shipping === 0 ? 'GRATIS' : formatMoney(details.shipping) %></span>
+            </div>
+
+            <div class="summary-row summary-total">
+                <span>Total a Pagar</span>
+                <span style="color: var(--primary);"><%= formatMoney(details.final_total) %> COP</span>
+            </div>
+
+            <div style="margin-top: 16px; font-size: 0.8rem; color: var(--text-muted); text-align: center;">
+                🛡️ Garantía de 30 días con reembolso íntegro.
+            </div>
+        </div>
     </div>
 </div>
 

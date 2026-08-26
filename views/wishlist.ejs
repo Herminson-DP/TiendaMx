@@ -1,0 +1,68 @@
+<%- include('header') %>
+
+<div class="flex-between" style="margin-bottom: 24px;">
+    <div>
+        <h2>Mis Productos Favoritos ❤️</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">Artículos que has guardado para comprar más adelante.</p>
+    </div>
+    <a href="/index.php" class="btn btn-secondary btn-sm">Continuar Explorando</a>
+</div>
+
+<% if (!products || products.length === 0) { %>
+    <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 16px; border: 1px solid var(--border);">
+        <div style="font-size: 3.5rem; margin-bottom: 16px;">🤍</div>
+        <h3>Tu lista de favoritos está vacía</h3>
+        <p style="color: var(--text-muted); margin: 8px 0 24px;">Explora el catálogo y haz clic en el corazón para guardar los productos que más te gusten.</p>
+        <a href="/index.php" class="btn btn-primary">Ir al Catálogo</a>
+    </div>
+<% } else { %>
+    <div class="products-grid">
+        <% products.forEach(p => { %>
+            <% 
+                const discount = Number(p.discount) || 0;
+                const finalPrice = p.price * (1 - discount / 100);
+            %>
+            <div class="product-card">
+                <form action="/index.php?action=toggle-wishlist" method="POST" style="margin: 0;">
+                    <input type="hidden" name="product_id" value="<%= p.id %>">
+                    <button type="submit" class="btn-wishlist active" title="Eliminar de favoritos">
+                        ❤️
+                    </button>
+                </form>
+
+                <a href="/index.php?action=product&id=<%= p.id %>" class="card-img-wrapper">
+                    <img src="<%= p.image %>" alt="<%= p.name %>">
+                </a>
+
+                <div class="card-body">
+                    <div class="card-category"><%= p.category %></div>
+                    <a href="/index.php?action=product&id=<%= p.id %>">
+                        <h3 class="card-title"><%= p.name %></h3>
+                    </a>
+
+                    <div class="card-price-row">
+                        <span class="price-main"><%= formatMoney(finalPrice) %></span>
+                        <% if (discount > 0) { %>
+                            <span class="price-old"><%= formatMoney(p.price) %></span>
+                        <% } %>
+                    </div>
+
+                    <div class="card-actions">
+                        <form action="/index.php?action=add-to-cart" method="POST" style="margin: 0; display: contents;">
+                            <input type="hidden" name="product_id" value="<%= p.id %>">
+                            <input type="hidden" name="return_url" value="/index.php?action=wishlist">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                🛒 Mover al Carrito
+                            </button>
+                        </form>
+                        <a href="/index.php?action=product&id=<%= p.id %>" class="btn btn-secondary" title="Ver Detalles">
+                            👁️
+                        </a>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+<% } %>
+
+<%- include('footer') %>

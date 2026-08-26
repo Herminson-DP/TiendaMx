@@ -1,6 +1,6 @@
 {
-  "name": "TiendaMx",
-  "description": "Tienda online con catálogo de productos, carrito de compras, proceso de pago, historial de órdenes y panel de administración.",
+  "name": "Tienda Colombia",
+  "description": "Tienda online colombiana con catálogo de productos en pesos colombianos (COP), carrito, envíos a toda Colombia, pagos PSE, Nequi y Daviplata, e historial de pedidos.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

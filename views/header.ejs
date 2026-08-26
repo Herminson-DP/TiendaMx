@@ -3,22 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= config.store_name || 'Tienda Online' %></title>
+    <title><%= typeof title !== 'undefined' ? title : (config.store_name || 'TiendaMx') %></title>
+    <link rel="stylesheet" href="/public/css/style.css">
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
-    <header class="navbar">
+    <!-- Top Promotional Announcement Bar -->
+    <div class="announcement-bar">
         <div class="container flex-between">
-            <a href="/index.php" class="brand"><%= config.store_name || 'Tienda Online' %></a>
-            <nav>
-                <a href="/index.php">Catálogo</a>
-                <a href="/index.php?action=cart">
-                    Carrito (<%= cartCount || 0 %>)
+            <span>✨ <strong>ENVÍO GRATIS</strong> en compras desde <%= formatMoney(config.free_shipping_threshold || 200000) %> COP | Cupón: <strong>BIENVENIDO10</strong> (-10%)</span>
+            <span class="flex-gap" style="font-size: 0.82rem;">
+                <span>🔒 Compra 100% Protegida</span>
+                <span>•</span>
+                <span>⚡ Envíos a toda Colombia</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- Main Navigation Bar -->
+    <header class="navbar">
+        <div class="container">
+            <div class="nav-inner">
+                <!-- Brand Logo -->
+                <a href="/index.php" class="brand">
+                    <div class="brand-icon">🛍️</div>
+                    <div class="brand-text">
+                        <%= config.store_name || 'Tienda Colombia' %>
+                    </div>
                 </a>
-                <a href="/index.php?action=orders">Historial</a>
-                <a href="/index.php?action=admin" class="btn-admin">Admin</a>
-            </nav>
+
+                <!-- Quick Search Bar -->
+                <form action="/index.php" method="GET" class="nav-search-form">
+                    <input 
+                        type="text" 
+                        name="search" 
+                        class="nav-search-input" 
+                        placeholder="Buscar laptops, audífonos, calzado, café..." 
+                        value="<%= typeof search !== 'undefined' ? search : '' %>"
+                    >
+                    <button type="submit" class="nav-search-btn" title="Buscar">
+                        🔍
+                    </button>
+                </form>
+
+                <!-- Navigation Actions -->
+                <div class="nav-actions">
+                    <a href="/index.php" class="nav-link">
+                        Catálogo
+                    </a>
+
+                    <!-- Wishlist Link -->
+                    <a href="/index.php?action=wishlist" class="nav-badge-link" title="Lista de Deseos">
+                        <span>❤️</span>
+                        <span>Favoritos</span>
+                        <span class="badge-count badge-wishlist"><%= wishlistCount || 0 %></span>
+                    </a>
+
+                    <!-- Shopping Cart Link -->
+                    <a href="/index.php?action=cart" class="nav-badge-link" title="Carrito de Compras">
+                        <span>🛒</span>
+                        <span>Carrito</span>
+                        <span class="badge-count"><%= cartCount || 0 %></span>
+                    </a>
+
+                    <!-- Orders History -->
+                    <a href="/index.php?action=orders" class="nav-link">
+                        📦 Mis Pedidos
+                    </a>
+
+                    <!-- Admin Portal Button -->
+                    <a href="/index.php?action=admin" class="btn-nav-admin" title="Panel de Administración">
+                        ⚙️ Admin
+                    </a>
+                </div>
+            </div>
         </div>
     </header>
 
-    <main class="container">
+    <!-- Main Body Container -->
+    <main class="main-content container">
+        <!-- Flash Alert Notification Messages -->
+        <% if (flash) { %>
+            <div class="flash-container">
+                <div class="flash-message flash-<%= flash.type %>">
+                    <span><%= flash.message %></span>
+                    <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;">✕</button>
+                </div>
+            </div>
+        <% } %>
