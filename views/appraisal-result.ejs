@@ -1,0 +1,97 @@
+<%- include('header') %>
+
+<div class="max-w-4xl mx-auto px-4 sm:px-6 py-12">
+    <div class="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-xl space-y-8">
+        
+        <!-- Header -->
+        <div class="text-center space-y-2 pb-6 border-b border-slate-100">
+            <span class="bg-emerald-100 text-emerald-800 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">
+                ✓ Tasación Preliminar Completada
+            </span>
+            <h1 class="font-display text-2xl sm:text-3xl font-black text-slate-900">
+                Resultado para tu <%= valuation.make %> <%= valuation.model %> (<%= valuation.year %>)
+            </h1>
+            <p class="text-xs text-slate-500 font-mono">
+                Placa: <strong><%= valuation.plate %></strong> • Kilometraje: <strong><%= valuation.mileage.toLocaleString('es-CO') %> km</strong> • Estado: <strong><%= valuation.condition %></strong>
+            </p>
+        </div>
+
+        <!-- Range Highlight -->
+        <div class="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 text-center space-y-3">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Rango de Mercado Estimado</span>
+            <div class="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-emerald-400 to-sky-400">
+                $<%= valuation.lowUSD.toLocaleString() %> - $<%= valuation.highUSD.toLocaleString() %> <span class="text-lg font-bold text-slate-300">USD</span>
+            </div>
+            <p class="text-xs text-slate-400 font-mono">
+                Equivalente aproximado: <strong><%= formatCOP(valuation.lowCOP) %> - <%= formatCOP(valuation.highCOP) %></strong>
+            </p>
+        </div>
+
+        <!-- Two Selling Routes -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Option 1: Compra Inmediata -->
+            <div class="bg-amber-50/70 rounded-3xl p-6 border-2 border-amber-300 flex flex-col justify-between space-y-4">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="bg-amber-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded uppercase">Más Rápida</span>
+                        <span class="text-xs font-bold text-amber-900">Pago en 24 Horas</span>
+                    </div>
+                    <h3 class="font-display font-black text-xl text-slate-900">Oferta de Compra Inmediata</h3>
+                    <p class="text-xs text-slate-600 mt-2">
+                        AutoHub compra tu auto directamente. Te transferimos los fondos de inmediato sin esperas ni intermediarios.
+                    </p>
+                    <div class="mt-4 p-3 bg-white rounded-2xl border border-amber-200 text-center">
+                        <span class="text-[10px] text-slate-400 block font-bold">Oferta Estimada de Compra Directa</span>
+                        <span class="text-2xl font-black text-slate-900">$<%= valuation.instantOfferUSD.toLocaleString() %> USD</span>
+                        <span class="text-xs text-slate-500 block font-mono"><%= formatCOP(valuation.instantOfferCOP) %></span>
+                    </div>
+                </div>
+
+                <a 
+                    href="https://api.whatsapp.com/send?text=Hola,%20recibi%20mi%20tasacion%20de%20AutoHub%20para%20mi%20<%= encodeURIComponent(valuation.make + ' ' + valuation.model) %>%20Placa%20<%= valuation.plate %>%20y%20quiero%20coordinar%20el%20peritaje%20gratuito." 
+                    target="_blank" 
+                    class="block text-center py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl transition text-xs uppercase tracking-wider shadow-md"
+                >
+                    Aceptar Oferta & Agendar Peritaje
+                </a>
+            </div>
+
+            <!-- Option 2: Consignación Virtual -->
+            <div class="bg-slate-50 rounded-3xl p-6 border border-slate-200 flex flex-col justify-between space-y-4">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="bg-slate-200 text-slate-700 text-[10px] font-black px-2 py-0.5 rounded uppercase">Mayor Ganancia</span>
+                        <span class="text-xs font-bold text-slate-500">Sin dejar el auto</span>
+                    </div>
+                    <h3 class="font-display font-black text-xl text-slate-900">Consignación Virtual AutoHub</h3>
+                    <p class="text-xs text-slate-600 mt-2">
+                        Publicamos tu auto en nuestra plataforma con sesión fotográfica 360° profesional mientras tú lo sigues conduciendo.
+                    </p>
+                    <div class="mt-4 p-3 bg-white rounded-2xl border border-slate-200 text-center">
+                        <span class="text-[10px] text-slate-400 block font-bold">Precio Objetivo de Venta</span>
+                        <span class="text-2xl font-black text-emerald-600">$<%= valuation.highUSD.toLocaleString() %> USD</span>
+                        <span class="text-xs text-slate-500 block font-mono"><%= formatCOP(valuation.highCOP) %></span>
+                    </div>
+                </div>
+
+                <a 
+                    href="https://api.whatsapp.com/send?text=Hola,%20quiero%20consignar%20mi%20<%= encodeURIComponent(valuation.make + ' ' + valuation.model) %>%20en%20AutoHub." 
+                    target="_blank" 
+                    class="block text-center py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl transition text-xs uppercase tracking-wider"
+                >
+                    Consignar mi Auto
+                </a>
+            </div>
+
+        </div>
+
+        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-600 flex items-center justify-between">
+            <span>¿Tienes dudas sobre la valoración? Contactamos a <strong><%= valuation.phone %></strong> en breve.</span>
+            <a href="/tasador" class="text-brand-600 font-bold hover:underline">Hacer otra tasación</a>
+        </div>
+
+    </div>
+</div>
+
+<%- include('footer') %>

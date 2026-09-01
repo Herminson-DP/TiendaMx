@@ -1,0 +1,617 @@
+<%- include('header') %>
+
+<!-- Breadcrumb -->
+<div class="bg-slate-100 border-b border-slate-200 py-3">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-xs font-semibold text-slate-500 flex items-center gap-2">
+        <a href="/" class="hover:text-slate-900">Inicio</a>
+        <span>/</span>
+        <a href="/autopartes" class="hover:text-slate-900">Autopartes</a>
+        <span>/</span>
+        <a href="/autopartes?category=<%= encodeURIComponent(part.category) %>" class="hover:text-slate-900"><%= part.category %></a>
+        <span>/</span>
+        <span class="text-slate-900 font-bold"><%= part.name %></span>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-12">
+        
+        <!-- Part Image View -->
+        <div class="lg:col-span-6 space-y-4">
+            <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm relative overflow-hidden flex items-center justify-center">
+                <img src="<%= part.image %>" alt="<%= part.name %>" class="w-full h-80 sm:h-96 object-cover rounded-2xl">
+                
+                <% if (isCompatible) { %>
+                    <div class="absolute top-6 left-6 bg-emerald-600 text-white text-xs font-black px-3.5 py-1.5 rounded-xl shadow-lg flex items-center gap-1.5">
+                        <span>✓</span> Compatibilidad Verificada con tu <%= currentGarage.make %> <%= currentGarage.model %>
+                    </div>
+                <% } %>
+            </div>
+
+            <!-- Trust badges -->
+            <div class="grid grid-cols-3 gap-3 text-center text-xs">
+                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                    <span class="text-xl block mb-1">📦</span>
+                    <span class="font-bold text-slate-800 block">Envío Rápido</span>
+                    <span class="text-[10px] text-slate-400">24-48 horas</span>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                    <span class="text-xl block mb-1">🛡️</span>
+                    <span class="font-bold text-slate-800 block">Garantía OEM</span>
+                    <span class="text-[10px] text-slate-400">100% Original</span>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                    <span class="text-xl block mb-1">🔄</span>
+                    <span class="font-bold text-slate-800 block">Devolución Fácil</span>
+                    <span class="text-[10px] text-slate-400">30 días de plazo</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Part Information & Purchase -->
+        <div class="lg:col-span-6 space-y-6">
+            
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="bg-brand-50 text-brand-700 text-xs font-black px-2.5 py-1 rounded-lg border border-brand-200">
+                        <%= part.brand %>
+                    </span>
+                    <span class="text-xs text-slate-400 font-mono">
+                        SKU: <%= part.sku %>
+                    </span>
+                    <span class="text-xs text-amber-500 font-bold ml-auto">
+                        ★ <%= part.rating %> (<%= part.reviews_count %> opiniones)
+                    </span>
+                </div>
+
+                <h1 class="font-display text-2xl sm:text-3xl font-black text-slate-900 leading-tight">
+                    <%= part.name %>
+                </h1>
+                
+                <p class="text-xs font-mono text-slate-500 mt-1">
+                    Número de Parte Original (OEM): <strong><%= part.oem_number %></strong>
+                </p>
+            </div>
+
+            <!-- Garaje Fitment Card -->
+            <div class="p-4 rounded-2xl border <%= isCompatible ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-amber-50 border-amber-200 text-amber-900' %>">
+                <div class="flex items-start gap-3">
+                    <span class="text-2xl"><%= isCompatible ? '✓' : '⚠️' %></span>
+                    <div>
+                        <span class="font-black text-xs block">
+                            <%= isCompatible ? `¡Encaja perfectamente en tu ${currentGarage.make} ${currentGarage.model} (${currentGarage.year})!` : `No confirmado para tu ${currentGarage.make} ${currentGarage.model}` %>
+                        </span>
+                        <span class="text-[11px] <%= isCompatible ? 'text-emerald-700' : 'text-amber-800' %>">
+                            <%= isCompatible ? 'Nuestra matriz de compatibilidad ACES garantiza ajuste sin modificaciones.' : 'Revisa la lista de modelos compatibles abajo o cambia de vehículo en tu Garaje.' %>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price & Stock -->
+            <div class="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-4">
+                <div class="flex items-baseline gap-3">
+                    <span class="text-3xl font-black text-slate-900"><%= formatCOP(part.price_cop) %></span>
+                    <span class="text-sm text-slate-400 line-through"><%= formatCOP(part.old_price_cop) %></span>
+                    <span class="text-xs text-emerald-600 font-bold bg-emerald-100 px-2 py-0.5 rounded">
+                        -<%= part.discount %>% OFF
+                    </span>
+                    <span class="text-xs text-slate-500 ml-auto font-mono"><%= formatUSD(part.price_usd) %></span>
+                </div>
+
+                <span class="text-xs font-bold text-emerald-700 block">
+                    ● En Stock: <%= part.stock %> unidades disponibles para despacho inmediato
+                </span>
+
+                <!-- Action Buttons: Instant Buy (Opens Payment Modal) & Add to Cart -->
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-28">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cantidad</label>
+                            <select id="partDetailQtySelect" onchange="syncDirectBuyQty(this.value)" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-bold focus:outline-none">
+                                <% for (let i = 1; i <= Math.min(10, part.stock); i++) { %>
+                                    <option value="<%= i %>"><%= i %> <%= i === 1 ? 'unidad' : 'unidades' %></option>
+                                <% } %>
+                            </select>
+                        </div>
+
+                        <div class="flex-1 pt-4">
+                            <button 
+                                type="button" 
+                                onclick="openPartDirectBuyModal()"
+                                class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-xl transition shadow-lg shadow-brand-600/30 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <span>⚡</span> Comprar Ahora (Ver Métodos de Pago)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Secondary Add to Cart Form -->
+                    <form action="/api/cart/add" method="POST" class="pt-1">
+                        <input type="hidden" name="part_id" value="<%= part.id %>">
+                        <input type="hidden" name="quantity" id="cartAddHiddenQty" value="1">
+                        <button 
+                            type="submit" 
+                            class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl transition text-xs flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                            <span>🛒</span> Añadir al Carrito de Compras
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Payment methods mini banner with trigger -->
+                <div class="pt-3 border-t border-slate-200/80 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Métodos de Pago Disponibles:</span>
+                        <button type="button" onclick="openPartDirectBuyModal()" class="text-[11px] text-brand-600 font-bold hover:underline cursor-pointer">
+                            Ver Opciones de Pago &rarr;
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-slate-700">
+                        <button type="button" onclick="openPartDirectBuyModal('pse')" class="bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-brand-500 flex items-center gap-1 cursor-pointer transition">🏛️ PSE Bancos (19 Bancos)</button>
+                        <button type="button" onclick="openPartDirectBuyModal('wallet')" class="bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-brand-500 flex items-center gap-1 cursor-pointer transition">📱 Nequi & Daviplata</button>
+                        <button type="button" onclick="openPartDirectBuyModal('card')" class="bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-brand-500 flex items-center gap-1 cursor-pointer transition">💳 Tarjetas de Crédito</button>
+                        <button type="button" onclick="openPartDirectBuyModal('transfer')" class="bg-white px-2.5 py-1 rounded-lg border border-slate-200 hover:border-brand-500 flex items-center gap-1 cursor-pointer transition">📑 Transferencia Directa</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="text-xs text-slate-600 space-y-2">
+                <h3 class="font-bold text-slate-900 text-sm">Descripción del Fabricante</h3>
+                <p class="leading-relaxed"><%= part.description %></p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TABS: FITMENT MATRIX & DETAILED SPECS -->
+    <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-8">
+        
+        <!-- Matriz de Compatibilidad de Vehículos -->
+        <div>
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+                <div>
+                    <span class="text-brand-600 font-bold text-xs uppercase tracking-wider">Matriz de Aplicación Vehicular</span>
+                    <h2 class="font-display font-black text-2xl text-slate-900">Vehículos Compatibles Verificados</h2>
+                </div>
+                <span class="text-xs text-slate-500 font-semibold">Total: <%= part.compatible_vehicles.length %> modelos</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-50 text-slate-500 uppercase font-black border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-4">Marca</th>
+                            <th class="py-3 px-4">Modelo</th>
+                            <th class="py-3 px-4">Años de Aplicación</th>
+                            <th class="py-3 px-4">Motorización / Cilindrada</th>
+                            <th class="py-3 px-4 text-right">Compatibilidad</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-semibold">
+                        <% part.compatible_vehicles.forEach(cv => { 
+                            const isMatch = cv.make.toLowerCase() === currentGarage.make.toLowerCase() && cv.model.toLowerCase() === currentGarage.model.toLowerCase();
+                        %>
+                            <tr class="<%= isMatch ? 'bg-emerald-50/60 font-bold text-emerald-950' : 'hover:bg-slate-50' %>">
+                                <td class="py-3 px-4"><%= cv.make %></td>
+                                <td class="py-3 px-4"><%= cv.model %></td>
+                                <td class="py-3 px-4 font-mono"><%= cv.years %></td>
+                                <td class="py-3 px-4"><%= cv.engine %></td>
+                                <td class="py-3 px-4 text-right">
+                                    <% if (isMatch) { %>
+                                        <span class="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded">
+                                            ✓ Tu Garaje
+                                        </span>
+                                    <% } else { %>
+                                        <span class="text-emerald-700 font-bold">100% Fit</span>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Ficha Técnica -->
+        <div class="pt-6 border-t border-slate-100">
+            <h3 class="font-display font-black text-xl text-slate-900 mb-4">Ficha Técnica & Dimensiones Logísticas</h3>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+                <% for (const key in part.specifications) { %>
+                    <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                        <span class="text-slate-400 font-bold uppercase text-[10px] block"><%= key.replace(/_/g, ' ') %></span>
+                        <span class="font-black text-slate-800 text-xs mt-0.5 block"><%= part.specifications[key] %></span>
+                    </div>
+                <% } %>
+                <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                    <span class="text-slate-400 font-bold uppercase text-[10px] block">Peso para Envío</span>
+                    <span class="font-black text-slate-800 text-xs mt-0.5 block"><%= part.weight_kg %> kg</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- DIRECT BUY & PAYMENT MODAL FOR AUTOPARTS -->
+<div id="partDirectModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto hidden">
+    <div class="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
+        
+        <!-- Header -->
+        <div class="p-5 bg-slate-900 text-white flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <span class="p-2 bg-brand-600 rounded-xl text-lg">⚡</span>
+                <div>
+                    <h3 class="font-display font-black text-base leading-tight">Compra Directa de Autoparte</h3>
+                    <p class="text-xs text-slate-300">Selecciona tu método de pago para despacho inmediato</p>
+                </div>
+            </div>
+            <button 
+                type="button" 
+                onclick="closePartDirectBuyModal()" 
+                class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition"
+            >
+                ✕
+            </button>
+        </div>
+
+        <!-- Body Form -->
+        <form action="/api/checkout/process" method="POST" class="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+            <input type="hidden" name="direct_part_id" value="<%= part.id %>">
+            <input type="hidden" name="direct_quantity" id="modalHiddenQty" value="1">
+
+            <!-- Item Summary in Modal -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <img src="<%= part.image %>" alt="<%= part.name %>" class="w-14 h-14 object-cover rounded-xl border border-slate-200 shrink-0">
+                    <div>
+                        <span class="text-[10px] font-mono text-slate-400 block">SKU: <%= part.sku %> • <%= part.brand %></span>
+                        <h4 class="font-black text-slate-900 text-xs sm:text-sm line-clamp-1"><%= part.name %></h4>
+                        <span class="text-[11px] font-bold text-slate-600">Cant: <span id="modalDisplayQty">1</span> unidad(es)</span>
+                    </div>
+                </div>
+                <div class="text-right shrink-0">
+                    <span class="text-[10px] text-slate-400 block">Total Estimado</span>
+                    <span class="font-black text-slate-900 text-sm sm:text-base block text-brand-600" id="modalDisplayTotal"><%= formatCOP(part.price_cop) %></span>
+                </div>
+            </div>
+
+            <!-- Customer Shipping Info -->
+            <div class="space-y-3">
+                <h4 class="font-display font-black text-slate-900 text-sm flex items-center gap-2">
+                    <span>📦</span> Datos del Comprador & Dirección de Entrega
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nombre Completo *</label>
+                        <input type="text" name="first_name" required placeholder="Carlos" value="Carlos" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Apellidos *</label>
+                        <input type="text" name="last_name" required placeholder="Gómez" value="Gómez" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Email *</label>
+                        <input type="email" name="email" required placeholder="carlos.gomez@ejemplo.com" value="carlos.gomez@ejemplo.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Celular / WhatsApp *</label>
+                        <input type="tel" name="phone" required placeholder="+57 310 987 6543" value="+57 310 987 6543" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Dirección de Entrega *</label>
+                        <input type="text" name="address" required placeholder="Calle 93B # 13-45 Apto 402" value="Calle 93B # 13-45 Apto 402" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ciudad *</label>
+                        <input type="text" name="city" required placeholder="Bogotá D.C." value="Bogotá D.C." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Departamento *</label>
+                        <select name="department" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <option value="Cundinamarca" selected>Cundinamarca / Bogotá</option>
+                            <option value="Antioquia">Antioquia / Medellín</option>
+                            <option value="Valle del Cauca">Valle del Cauca / Cali</option>
+                            <option value="Atlántico">Atlántico / Barranquilla</option>
+                            <option value="Santander">Santander / Bucaramanga</option>
+                            <option value="Bolívar">Bolívar / Cartagena</option>
+                            <option value="Risaralda">Risaralda / Pereira</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAYMENT METHOD SELECTION (100% VISIBLE & INTERACTIVE) -->
+            <div class="space-y-4 pt-2 border-t border-slate-100">
+                <div class="flex items-center justify-between">
+                    <h4 class="font-display font-black text-slate-900 text-sm flex items-center gap-2">
+                        <span>💳</span> Selecciona tu Método de Pago o Banco
+                    </h4>
+                    <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">ACH Colombia / Cifrado SSL</span>
+                </div>
+
+                <!-- Selector Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    
+                    <label class="modal-pm-card border-2 border-brand-500 bg-brand-50/60 rounded-2xl p-2.5 cursor-pointer transition flex flex-col items-center text-center gap-1 hover:border-brand-600">
+                        <input type="radio" name="payment_method" value="pse" checked onchange="switchModalPaymentMethod('pse')" class="sr-only">
+                        <span class="text-xl">🏛️</span>
+                        <span class="text-xs font-black text-slate-900 block leading-tight">PSE Bancos</span>
+                        <span class="text-[9px] text-slate-500 font-medium">Débito en Línea</span>
+                    </label>
+
+                    <label class="modal-pm-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-2.5 cursor-pointer transition flex flex-col items-center text-center gap-1">
+                        <input type="radio" name="payment_method" value="wallet" onchange="switchModalPaymentMethod('wallet')" class="sr-only">
+                        <span class="text-xl">📱</span>
+                        <span class="text-xs font-black text-slate-900 block leading-tight">Nequi / Daviplata</span>
+                        <span class="text-[9px] text-slate-500 font-medium">Notificación Push</span>
+                    </label>
+
+                    <label class="modal-pm-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-2.5 cursor-pointer transition flex flex-col items-center text-center gap-1">
+                        <input type="radio" name="payment_method" value="card" onchange="switchModalPaymentMethod('card')" class="sr-only">
+                        <span class="text-xl">💳</span>
+                        <span class="text-xs font-black text-slate-900 block leading-tight">Tarjeta Crédito</span>
+                        <span class="text-[9px] text-slate-500 font-medium">Hasta 36 cuotas</span>
+                    </label>
+
+                    <label class="modal-pm-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-2.5 cursor-pointer transition flex flex-col items-center text-center gap-1">
+                        <input type="radio" name="payment_method" value="transfer" onchange="switchModalPaymentMethod('transfer')" class="sr-only">
+                        <span class="text-xl">📑</span>
+                        <span class="text-xs font-black text-slate-900 block leading-tight">Transferencia</span>
+                        <span class="text-[9px] text-slate-500 font-medium">QR Bancolombia</span>
+                    </label>
+
+                </div>
+
+                <!-- 1. PSE Box -->
+                <div id="modal-field-pse" class="modal-fields-box bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3">
+                    <div class="flex items-center justify-between pb-1.5 border-b border-slate-200">
+                        <span class="font-black text-slate-800 text-[11px]">Pagos Seguros en Línea (PSE)</span>
+                        <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">19 Bancos de Colombia</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div class="sm:col-span-2">
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Banco o Entidad *</label>
+                            <select name="pse_bank" id="modalPseBankSelect" onchange="updateModalPseBank(this.value)" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="Bancolombia" selected>Bancolombia</option>
+                                <option value="Banco de Bogotá">Banco de Bogotá</option>
+                                <option value="Davivienda">Davivienda</option>
+                                <option value="BBVA Colombia">BBVA Colombia</option>
+                                <option value="Banco de Occidente">Banco de Occidente</option>
+                                <option value="Banco Popular">Banco Popular</option>
+                                <option value="Banco AV Villas">Banco AV Villas</option>
+                                <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
+                                <option value="Banco Caja Social">Banco Caja Social</option>
+                                <option value="Banco Itaú Colombia">Banco Itaú Colombia</option>
+                                <option value="Banco Agrario de Colombia">Banco Agrario de Colombia</option>
+                                <option value="Lulo Bank">Lulo Bank</option>
+                                <option value="Nu Colombia (Nubank)">Nu Colombia (Nubank)</option>
+                                <option value="Dale!">Dale!</option>
+                                <option value="Nequi">Nequi</option>
+                                <option value="Daviplata">Daviplata</option>
+                                <option value="RappiPay">RappiPay</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Tipo de Persona *</label>
+                            <select name="pse_person_type" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="Persona Natural">Persona Natural</option>
+                                <option value="Persona Jurídica">Persona Jurídica</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Documento Identidad *</label>
+                            <input type="text" name="pse_doc_number" placeholder="Ej: 1098765432" value="1098765432" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div id="modalPseGuidance" class="p-2.5 bg-blue-50 rounded-xl border border-blue-200 text-[11px] text-blue-900 flex items-start gap-2">
+                        <span class="text-sm">ℹ️</span>
+                        <div>
+                            <strong id="modalPseBankName">Bancolombia:</strong> 
+                            <span id="modalPseBankMsg">Ten a la mano tu Clave Dinámica o App Móvil Bancolombia para autorizar el débito en línea.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Wallet Box -->
+                <div id="modal-field-wallet" class="modal-fields-box bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3 hidden">
+                    <div class="flex items-center justify-between pb-1.5 border-b border-slate-200">
+                        <span class="font-black text-slate-800 text-[11px]">Billeteras Móviles</span>
+                        <span class="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded">Cobro Push</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Billetera *</label>
+                            <select name="wallet_provider" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="Nequi" selected>Nequi</option>
+                                <option value="Daviplata">Daviplata</option>
+                                <option value="Dale!">Dale!</option>
+                                <option value="Transfiya">Transfiya</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Celular *</label>
+                            <input type="tel" name="wallet_phone" placeholder="310 987 6543" value="3109876543" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Card Box -->
+                <div id="modal-field-card" class="modal-fields-box bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3 hidden">
+                    <div class="flex items-center justify-between pb-1.5 border-b border-slate-200">
+                        <span class="font-black text-slate-800 text-[11px]">Tarjeta de Crédito / Débito</span>
+                        <span class="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded" id="modalCardBadge">Visa / MasterCard / Amex</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div class="sm:col-span-2">
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Número de Tarjeta *</label>
+                            <input type="text" name="card_number" oninput="detectModalCardBrand(this.value)" placeholder="4532 8921 0492 8821" value="4532 8921 0492 8821" maxlength="19" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono font-bold tracking-wider focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Titular *</label>
+                            <input type="text" name="card_holder" placeholder="CARLOS GOMEZ" value="CARLOS GOMEZ" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs uppercase font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Vence *</label>
+                                <input type="text" name="card_exp" placeholder="08/28" value="08/28" maxlength="5" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-center font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">CVV *</label>
+                                <input type="password" name="card_cvv" placeholder="•••" value="892" maxlength="4" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-center font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Cuotas</label>
+                            <select name="card_installments" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="1">1 Cuota</option>
+                                <option value="3">3 Cuotas</option>
+                                <option value="6">6 Cuotas</option>
+                                <option value="12">12 Cuotas</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Cédula Titular</label>
+                            <input type="text" name="card_doc_number" placeholder="1098765432" value="1098765432" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Transfer Box -->
+                <div id="modal-field-transfer" class="modal-fields-box bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3 hidden">
+                    <div class="p-3 bg-emerald-950 text-white rounded-xl text-xs space-y-1">
+                        <div class="text-[10px] text-emerald-400 font-bold uppercase">Bancolombia Cuenta Corriente Oficial</div>
+                        <div class="font-mono font-black text-sm text-emerald-200">048-928192-11 (NIT 901.482.109-3)</div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Banco Origen *</label>
+                            <input type="text" name="transfer_origin_bank" placeholder="Bancolombia" value="Bancolombia" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">No. Comprobante *</label>
+                            <input type="text" name="transfer_ref_number" placeholder="Ej: TRF-9182310" value="TRF-9182310" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-3">
+                <button 
+                    type="submit" 
+                    class="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-2xl transition shadow-xl shadow-brand-600/30 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                >
+                    <span>🔒</span> Confirmar y Pagar Repuesto
+                </button>
+                <div class="text-center text-[10px] text-slate-400 mt-2">
+                    🔒 Cifrado de 256 bits • Garantía de devolución en 30 días si no ajusta
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const PART_UNIT_PRICE = <%= part.price_cop %>;
+
+    function syncDirectBuyQty(qtyVal) {
+        const qty = parseInt(qtyVal, 10) || 1;
+        document.getElementById('modalHiddenQty').value = qty;
+        document.getElementById('modalDisplayQty').textContent = qty;
+        const cartAddHidden = document.getElementById('cartAddHiddenQty');
+        if (cartAddHidden) cartAddHidden.value = qty;
+
+        const subtotal = PART_UNIT_PRICE * qty;
+        const shipping = subtotal >= 200000 ? 0 : 18000;
+        const total = subtotal + shipping;
+        
+        const totalFormatted = '$' + total.toLocaleString('es-CO') + ' COP' + (shipping === 0 ? ' (Envío Gratis)' : '');
+        document.getElementById('modalDisplayTotal').textContent = totalFormatted;
+    }
+
+    function openPartDirectBuyModal(specificMethod) {
+        if (!window.IS_USER_LOGGED_IN) {
+            showAuthRequiredModal(window.location.pathname, 'Para comprar este repuesto debes registrarte si no estás registrado o iniciar sesión si ya tienes cuenta.');
+            return;
+        }
+        const qtySelect = document.getElementById('partDetailQtySelect');
+        if (qtySelect) {
+            syncDirectBuyQty(qtySelect.value);
+        }
+        document.getElementById('partDirectModal').classList.remove('hidden');
+        if (specificMethod) {
+            switchModalPaymentMethod(specificMethod);
+        }
+    }
+
+    function closePartDirectBuyModal() {
+        document.getElementById('partDirectModal').classList.add('hidden');
+    }
+
+    function switchModalPaymentMethod(methodKey) {
+        const boxes = document.querySelectorAll('.modal-fields-box');
+        boxes.forEach(b => b.classList.add('hidden'));
+
+        const target = document.getElementById('modal-field-' + methodKey);
+        if (target) {
+            target.classList.remove('hidden');
+        }
+
+        const cards = document.querySelectorAll('.modal-pm-card');
+        cards.forEach(c => {
+            const input = c.querySelector('input[type="radio"]');
+            if (input && input.value === methodKey) {
+                input.checked = true;
+                c.classList.add('border-brand-500', 'bg-brand-50/60');
+                c.classList.remove('border-slate-200');
+            } else {
+                c.classList.remove('border-brand-500', 'bg-brand-50/60');
+                c.classList.add('border-slate-200');
+            }
+        });
+    }
+
+    function updateModalPseBank(bankName) {
+        const nameEl = document.getElementById('modalPseBankName');
+        const msgEl = document.getElementById('modalPseBankMsg');
+        if (!nameEl || !msgEl) return;
+
+        nameEl.textContent = bankName + ':';
+        const msgs = {
+            'Bancolombia': 'Ten a la mano tu Clave Dinámica o App Bancolombia para autorizar el débito.',
+            'Banco de Bogotá': 'Ingresa con tu clave segura o genera tu Token Digital en la App Móvil.',
+            'Davivienda': 'Ten listo tu documento y tu clave virtual de Davivienda.',
+            'BBVA Colombia': 'Valida tu ingreso con Token BBVA desde la aplicación BBVA Móvil.',
+            'Banco de Occidente': 'Se solicitará tu clave de Banca Móvil y código OTP.',
+            'Nu Colombia (Nubank)': 'Se generará la orden de débito directo Nu con confirmación en la app de Nu.',
+            'Nequi': 'Usa tu número celular Nequi y confirma la notificación push de pago.',
+            'Daviplata': 'Ingresa tu número de celular y confirma el código SMS de Daviplata.'
+        };
+        msgEl.textContent = msgs[bankName] || 'Serás dirigido a la plataforma segura de ' + bankName + ' con cifrado bancario de 256 bits.';
+    }
+
+    function detectModalCardBrand(number) {
+        const clean = number.replace(/\s+/g, '');
+        const badge = document.getElementById('modalCardBadge');
+        if (!badge) return;
+
+        if (/^4/.test(clean)) {
+            badge.textContent = 'Visa Débito/Crédito';
+        } else if (/^5[1-5]/.test(clean)) {
+            badge.textContent = 'MasterCard';
+        } else if (/^3[47]/.test(clean)) {
+            badge.textContent = 'American Express';
+        } else {
+            badge.textContent = 'Visa / MasterCard / Amex';
+        }
+    }
+</script>
+
+<%- include('footer') %>

@@ -1,165 +1,108 @@
 <%- include('header') %>
 
-<div class="receipt-wrapper" id="receiptCard">
-    <!-- Receipt Header -->
-    <div class="receipt-header">
-        <div class="success-icon-badge">✓</div>
-        <h2>¡Gracias por tu compra en <%= config.store_name || 'Tienda Colombia' %>!</h2>
-        <p style="color: var(--text-muted); font-size: 1.05rem; margin-top: 6px;">
-            Tu orden <strong style="color: var(--primary);">#<%= order.id %></strong> ha sido confirmada y recibida con éxito.
-        </p>
-        <p style="font-size: 0.88rem; color: #64748b; margin-top: 4px;">
-            Hemos enviado una copia del recibo y detalles de entrega a <strong><%= order.customer.email %></strong>.
-        </p>
-    </div>
+<div class="max-w-3xl mx-auto px-4 sm:px-6 py-16">
+    <div class="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-xl text-center space-y-6">
+        
+        <div class="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-3xl mx-auto">
+            ✓
+        </div>
 
-    <!-- Tracking Stepper -->
-    <% 
-        const status = order.status || 'Confirmado';
-        let step1Class = 'done';
-        let step2Class = (status === 'Preparando' || status === 'Enviado' || status === 'Entregado') ? 'done' : 'active';
-        let step3Class = (status === 'Enviado' || status === 'Entregado') ? 'done' : (status === 'Preparando' ? 'active' : '');
-        let step4Class = (status === 'Entregado') ? 'done' : (status === 'Enviado' ? 'active' : '');
-    %>
-    <div class="tracking-stepper" aria-label="Progreso del pedido">
-        <div class="tracking-step <%= step1Class %>">
-            <div class="step-icon">✓</div>
-            <span class="step-label">Confirmado</span>
+        <div>
+            <span class="text-xs font-black uppercase text-emerald-600 tracking-wider">Pago Procesado con Éxito</span>
+            <h1 class="font-display text-3xl font-black text-slate-900 mt-1">¡Gracias por tu Compra en AutoHub!</h1>
+            <p class="text-xs text-slate-500 mt-1">Tu orden de autopartes está siendo preparada en nuestro centro logístico.</p>
         </div>
-        <div class="tracking-step <%= step2Class %>">
-            <div class="step-icon">📦</div>
-            <span class="step-label">Preparando</span>
-        </div>
-        <div class="tracking-step <%= step3Class %>">
-            <div class="step-icon">🚚</div>
-            <span class="step-label">En Camino</span>
-        </div>
-        <div class="tracking-step <%= step4Class %>">
-            <div class="step-icon">🏠</div>
-            <span class="step-label">Entregado</span>
-        </div>
-    </div>
 
-    <!-- Order Summary Grid Info -->
-    <div style="background: #f8fafc; border-radius: 16px; border: 1.5px solid var(--border); padding: 24px; margin-bottom: 32px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
-            <div>
-                <span style="font-size: 0.78rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Número de Orden:</span>
-                <p style="font-size: 1.05rem; font-weight: 800; color: var(--primary); margin-top: 2px;"><%= order.id %></p>
+        <!-- Receipt Box -->
+        <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200 text-left space-y-4 text-xs">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+                <div>
+                    <span class="text-slate-400 font-bold block">Número de Orden</span>
+                    <span class="font-mono font-black text-base text-slate-900"><%= order.id %></span>
+                </div>
+                <div class="text-right">
+                    <span class="text-slate-400 font-bold block">Guía de Rastreo</span>
+                    <span class="font-mono font-black text-xs text-brand-600"><%= order.trackingNumber %></span>
+                </div>
             </div>
-            <div>
-                <span style="font-size: 0.78rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Fecha y Hora:</span>
-                <p style="font-size: 0.95rem; font-weight: 600; color: var(--secondary); margin-top: 2px;"><%= order.date %></p>
-            </div>
-            <div>
-                <span style="font-size: 0.78rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Guía de Rastreo Nacional:</span>
-                <p style="font-size: 0.95rem; font-weight: 700; color: #059669; margin-top: 2px;"><%= order.trackingNumber || 'SERVI-PENDIENTE' %></p>
-            </div>
-            <div>
-                <span style="font-size: 0.78rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Método de Pago:</span>
-                <p style="font-size: 0.95rem; font-weight: 700; color: var(--secondary); margin-top: 2px;"><%= order.paymentMethod || 'PSE' %></p>
-            </div>
-        </div>
-    </div>
 
-    <!-- Customer Details -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
-        <div style="background: white; border: 1.5px solid var(--border); border-radius: 12px; padding: 20px;">
-            <h4 style="font-size: 0.95rem; margin-bottom: 12px; color: var(--secondary);">📍 Datos de Entrega</h4>
-            <p style="font-size: 0.9rem; margin-bottom: 4px;"><strong>Destinatario:</strong> <%= order.customer.name %></p>
-            <p style="font-size: 0.9rem; margin-bottom: 4px;"><strong>Dirección:</strong> <%= order.customer.address %></p>
-            <p style="font-size: 0.9rem; margin-bottom: 4px;"><strong>Celular:</strong> <%= order.customer.phone %></p>
-            <% if (order.customer.notes) { %>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;"><strong>Notas:</strong> <%= order.customer.notes %></p>
-            <% } %>
-        </div>
-
-        <div style="background: white; border: 1.5px solid var(--border); border-radius: 12px; padding: 20px;">
-            <h4 style="font-size: 0.95rem; margin-bottom: 12px; color: var(--secondary);">🚚 Método de Transporte</h4>
-            <p style="font-size: 0.9rem; margin-bottom: 6px;"><strong>Servicio:</strong> <%= order.shippingMethod || 'Estándar Colombia' %></p>
-            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
-                El transportador realizará hasta 2 intentos de entrega en la dirección indicada. Puedes verificar el estado en tiempo real en nuestra sección de pedidos.
-            </p>
-        </div>
-    </div>
-
-    <!-- Purchased Products Table -->
-    <h4 style="font-size: 1.1rem; margin-bottom: 16px;">Artículos Comprados</h4>
-    <div class="table-responsive" style="margin-bottom: 28px;">
-        <table class="custom-table">
-            <thead>
-                <tr>
-                    <th>Producto</th>
-                    <th>Cant.</th>
-                    <th>Precio Unitario</th>
-                    <th style="text-align: right;">Total</th>
-                </tr>
-            </thead>
-            <tbody>
+            <!-- Items -->
+            <div class="space-y-2">
+                <span class="text-slate-400 font-bold block">Repuestos Comprados</span>
                 <% order.items.forEach(item => { %>
-                    <tr>
-                        <td>
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <img 
-                                    src="<%= item.product.image %>" 
-                                    alt="<%= item.product.name %>" 
-                                    style="width: 46px; height: 46px; border-radius: 8px; object-fit: cover;"
-                                    onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60'"
-                                >
-                                <div>
-                                    <strong><%= item.product.name %></strong>
-                                    <div style="font-size: 0.78rem; color: var(--text-muted);"><%= item.product.category %></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td><strong><%= item.quantity %></strong></td>
-                        <td><%= formatMoney(item.unit_price) %></td>
-                        <td style="text-align: right;"><strong><%= formatMoney(item.total) %></strong></td>
-                    </tr>
+                    <div class="flex justify-between py-1.5 border-b border-slate-100 last:border-0">
+                        <div>
+                            <span class="font-bold text-slate-800"><%= item.part.name %></span>
+                            <span class="text-[10px] text-slate-400 block">Cant: <%= item.quantity %> • SKU: <%= item.part.sku %></span>
+                        </div>
+                        <span class="font-black text-slate-900"><%= formatCOP(item.totalCOP) %></span>
+                    </div>
                 <% }); %>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Financial Breakdown -->
-    <div style="max-width: 360px; margin-left: auto; margin-bottom: 36px;">
-        <div class="summary-row">
-            <span>Subtotal:</span>
-            <span><%= formatMoney(order.subtotal) %></span>
-        </div>
-        <% if (order.discountAmount > 0) { %>
-            <div class="summary-row" style="color: #059669; font-weight: 700;">
-                <span>Descuento (<%= order.couponCode %>):</span>
-                <span>-<%= formatMoney(order.discountAmount) %></span>
             </div>
-        <% } %>
-        <div class="summary-row">
-            <span>Impuestos IVA (<%= config.tax || 19 %>%):</span>
-            <span><%= formatMoney(order.tax) %></span>
-        </div>
-        <div class="summary-row">
-            <span>Costo de Envío:</span>
-            <span><%= order.shipping === 0 ? 'GRATIS' : formatMoney(order.shipping) %></span>
-        </div>
-        <div class="summary-row summary-total">
-            <span>Total Pagado:</span>
-            <span style="color: var(--primary);"><%= formatMoney(order.total) %> COP</span>
-        </div>
-    </div>
 
-    <!-- Action Buttons -->
-    <div class="flex-between" style="flex-wrap: wrap; gap: 14px; border-top: 1.5px solid var(--border); padding-top: 24px;">
-        <button type="button" class="btn btn-secondary" onclick="window.print()">
-            🖨️ Imprimir Recibo
-        </button>
-        <div class="flex-gap">
-            <a href="/index.php?action=orders" class="btn btn-secondary">
-                📦 Ver Mis Pedidos
+            <div class="pt-3 border-t border-slate-200 flex justify-between items-baseline">
+                <span class="font-black text-slate-900 text-sm">Total Pagado (<%= order.paymentMethod %>)</span>
+                <span class="font-black text-emerald-600 text-lg"><%= formatCOP(order.total) %></span>
+            </div>
+
+            <% if (order.payment_details) { %>
+                <!-- Detailed Bank / Gateway Breakdown -->
+                <div class="p-3 bg-white rounded-xl border border-slate-200 space-y-1.5 text-[11px]">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-800 flex items-center gap-1.5">
+                            <span>🏛️</span> <%= order.payment_details.type %>
+                        </span>
+                        <% if (order.payment_details.authCode) { %>
+                            <span class="bg-emerald-100 text-emerald-800 font-mono font-bold px-2 py-0.5 rounded text-[10px]">
+                                <%= order.payment_details.authCode %>
+                            </span>
+                        <% } %>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 text-slate-600 pt-1 border-t border-slate-100 text-[10px]">
+                        <% if (order.payment_details.bankName) { %>
+                            <div>Banco: <strong class="text-slate-900"><%= order.payment_details.bankName %></strong></div>
+                        <% } %>
+                        <% if (order.payment_details.docNumber) { %>
+                            <div>Documento: <strong class="text-slate-900"><%= order.payment_details.docType || 'CC' %> <%= order.payment_details.docNumber %></strong></div>
+                        <% } %>
+                        <% if (order.payment_details.transactionRef) { %>
+                            <div>Ref: <strong class="text-slate-900 font-mono"><%= order.payment_details.transactionRef %></strong></div>
+                        <% } %>
+                        <% if (order.payment_details.walletPhone) { %>
+                            <div>Billetera: <strong class="text-purple-700 font-mono"><%= order.payment_details.walletName %> (<%= order.payment_details.walletPhone %>)</strong></div>
+                        <% } %>
+                        <% if (order.payment_details.maskedCard) { %>
+                            <div>Tarjeta: <strong class="text-slate-900 font-mono"><%= order.payment_details.maskedCard %></strong></div>
+                            <div>Diferido: <strong class="text-slate-900"><%= order.payment_details.installments %> cuota(s)</strong></div>
+                        <% } %>
+                        <% if (order.payment_details.transferRef) { %>
+                            <div>Comprobante: <strong class="text-slate-900 font-mono"><%= order.payment_details.transferRef %></strong></div>
+                        <% } %>
+                    </div>
+                </div>
+            <% } %>
+
+            <div class="pt-2 text-slate-600">
+                <span class="text-slate-400 font-bold block">Destino de Entrega</span>
+                <p class="font-semibold"><%= order.customer.name %> • <%= order.customer.address %></p>
+                <% if (order.customer.partnerShopInstall) { %>
+                    <span class="inline-block mt-1 px-2 py-0.5 bg-brand-100 text-brand-800 rounded font-bold text-[10px]">
+                        🛠️ Incluye Servicio de Instalación en Taller Aliado
+                    </span>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-center gap-4 pt-4">
+            <a href="/autopartes" class="px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 transition">
+                Seguir Comprando Repuestos
             </a>
-            <a href="/index.php" class="btn btn-primary">
-                🛍️ Seguir Comprando
+            <a href="/" class="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-xs font-black text-white transition shadow-md">
+                Ir al Inicio
             </a>
         </div>
+
     </div>
 </div>
 

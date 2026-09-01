@@ -1,6 +1,6 @@
 {
-  "name": "Tienda Colombia",
-  "description": "Tienda online colombiana con catálogo de productos en pesos colombianos (COP), carrito, envíos a toda Colombia, pagos PSE, Nequi y Daviplata, e historial de pedidos.",
+  "name": "AutoHub Motors & Parts",
+  "description": "Plataforma e-commerce automotriz integral: Compraventa de vehículos certificados con peritaje e historial legal, venta de autopartes con garantía de compatibilidad por VIN y tasador interactivo.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

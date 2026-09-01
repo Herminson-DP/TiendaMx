@@ -1,0 +1,187 @@
+<%- include('header') %>
+
+<div class="bg-slate-900 text-white py-12 border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <span class="text-brand-400 font-extrabold text-xs uppercase tracking-wider">Flota Certificada AutoHub</span>
+                <h1 class="font-display text-3xl sm:text-4xl font-black mt-1">Catálogo de Vehículos con Peritaje</h1>
+                <p class="text-slate-400 text-xs sm:text-sm mt-1">Inspección de 150 puntos, historial legal transparente y garantía mecánica de 1 año.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="/tasador" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black transition">
+                    💰 ¿Quieres vender tu auto?
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- SIDEBAR FILTERS -->
+        <aside class="lg:col-span-3">
+            <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm sticky top-28 space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <h3 class="font-display font-black text-slate-900 text-base">Filtros Facetados</h3>
+                    <a href="/vehiculos" class="text-xs text-brand-600 hover:underline font-bold">Limpiar todo</a>
+                </div>
+
+                <form action="/vehiculos" method="GET" class="space-y-5">
+                    
+                    <!-- Search by text -->
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Palabra Clave</label>
+                        <input 
+                            type="text" 
+                            name="search" 
+                            value="<%= selectedFilters.search || '' %>" 
+                            placeholder="Modelo, versión..." 
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                        >
+                    </div>
+
+                    <!-- Make Filter -->
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Marca</label>
+                        <select name="make" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <option value="all">Todas las Marcas</option>
+                            <% filterOptions.makes.forEach(m => { %>
+                                <option value="<%= m %>" <%= selectedFilters.make === m ? 'selected' : '' %>><%= m %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+
+                    <!-- Fuel Filter -->
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Tipo de Combustible</label>
+                        <select name="fuel" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <option value="all">Todos los combustibles</option>
+                            <% filterOptions.fuels.forEach(f => { %>
+                                <option value="<%= f %>" <%= selectedFilters.fuel === f ? 'selected' : '' %>><%= f %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+
+                    <!-- City Filter -->
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Ciudad / Ubicación</label>
+                        <select name="city" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <option value="all">Todas las ciudades</option>
+                            <% filterOptions.cities.forEach(c => { %>
+                                <option value="<%= c %>" <%= selectedFilters.city === c ? 'selected' : '' %>><%= c %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+
+                    <!-- Max Price -->
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Presupuesto Máx. (COP)</label>
+                        <select name="max_price" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <option value="">Sin límite</option>
+                            <option value="60000000" <%= selectedFilters.max_price === '60000000' ? 'selected' : '' %>>Hasta $ 60.000.000 COP</option>
+                            <option value="100000000" <%= selectedFilters.max_price === '100000000' ? 'selected' : '' %>>Hasta $ 100.000.000 COP</option>
+                            <option value="150000000" <%= selectedFilters.max_price === '150000000' ? 'selected' : '' %>>Hasta $ 150.000.000 COP</option>
+                            <option value="250000000" <%= selectedFilters.max_price === '250000000' ? 'selected' : '' %>>Hasta $ 250.000.000 COP</option>
+                            <option value="350000000" <%= selectedFilters.max_price === '350000000' ? 'selected' : '' %>>Hasta $ 350.000.000 COP</option>
+                        </select>
+                    </div>
+
+                    <!-- Sort -->
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Ordenar por</label>
+                        <select name="sort" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <option value="price_asc" <%= selectedFilters.sort === 'price_asc' ? 'selected' : '' %>>Menor Precio ($ COP)</option>
+                            <option value="price_desc" <%= selectedFilters.sort === 'price_desc' ? 'selected' : '' %>>Mayor Precio ($ COP)</option>
+                            <option value="year_desc" <%= selectedFilters.sort === 'year_desc' ? 'selected' : '' %>>Año Más Reciente</option>
+                            <option value="mileage_asc" <%= selectedFilters.sort === 'mileage_asc' ? 'selected' : '' %>>Menor Kilometraje</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-xl transition shadow-md shadow-brand-600/20 text-xs">
+                        Aplicar Filtros
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- MAIN RESULTS -->
+        <main class="lg:col-span-9">
+            <div class="flex items-center justify-between mb-6">
+                <span class="text-xs font-bold text-slate-500">Mostrando <strong><%= totalCount %></strong> vehículos disponibles</span>
+                <span class="text-xs text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full font-bold border border-emerald-200">
+                    ✓ Precios en Pesos Colombianos ($ COP) con Peritaje
+                </span>
+            </div>
+
+            <% if (vehicles.length === 0) { %>
+                <div class="bg-white rounded-3xl p-12 text-center border border-slate-200">
+                    <div class="text-5xl mb-4">🚗</div>
+                    <h3 class="text-lg font-black text-slate-900">No encontramos vehículos con estos filtros</h3>
+                    <p class="text-xs text-slate-500 mt-2">Prueba modificando el rango de precio o eliminando filtros de marca.</p>
+                    <a href="/vehiculos" class="inline-block mt-4 px-5 py-2.5 bg-brand-600 text-white font-bold rounded-xl text-xs">
+                        Ver Todos los Vehículos
+                    </a>
+                </div>
+            <% } else { %>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <% vehicles.forEach(vehicle => { %>
+                        <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+                            <div>
+                                <div class="relative h-56 overflow-hidden bg-slate-100">
+                                    <img src="<%= vehicle.image %>" alt="<%= vehicle.title %>" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+                                    <div class="absolute top-3 left-3 flex flex-wrap gap-1">
+                                        <span class="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded shadow">
+                                            ★ <%= vehicle.inspection_score %>/10
+                                        </span>
+                                        <span class="bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded">
+                                            360°
+                                        </span>
+                                    </div>
+                                    <span class="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md text-slate-800 text-[10px] font-bold px-2 py-0.5 rounded shadow">
+                                        📍 <%= vehicle.city %>
+                                    </span>
+                                </div>
+
+                                <div class="p-5">
+                                    <div class="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1">
+                                        <span><%= vehicle.year %> • <%= vehicle.fuel %></span>
+                                        <span class="text-slate-600 font-bold"><%= vehicle.mileage_km.toLocaleString('es-CO') %> km</span>
+                                    </div>
+                                    <h3 class="text-base font-black text-slate-900 group-hover:text-brand-600 transition line-clamp-1">
+                                        <a href="/vehiculos/<%= vehicle.id %>"><%= vehicle.title %></a>
+                                    </h3>
+                                    <p class="text-[11px] text-slate-500 mt-1"><%= vehicle.engine %></p>
+                                    
+                                    <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
+                                        <span>⚙️ <%= vehicle.drivetrain.split(' ')[0] %></span>
+                                        <span class="text-emerald-700 font-bold">🛡️ 1 Año Garantía</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-5 pt-0">
+                                <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                                    <div>
+                                        <span class="text-base font-black text-slate-900"><%= formatCOP(vehicle.price_cop) %></span>
+                                        <span class="text-[10px] text-slate-400 block font-mono"><%= formatUSD(vehicle.price_usd) %> ref</span>
+                                    </div>
+                                    <a 
+                                        href="/vehiculos/<%= vehicle.id %>" 
+                                        class="px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-black transition shadow-sm"
+                                    >
+                                        Ver Ficha 360°
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } %>
+        </main>
+
+    </div>
+</div>
+
+<%- include('footer') %>

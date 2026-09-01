@@ -1,0 +1,131 @@
+<%- include('header') %>
+
+<div class="bg-slate-900 text-white py-14 border-b border-slate-800">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-3">
+        <span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-black px-3.5 py-1.5 rounded-full uppercase tracking-wider">
+            Tasación Algorítmica Inteligente
+        </span>
+        <h1 class="font-display text-3xl sm:text-5xl font-black">
+            Tasa y Vende tu Auto en 2 Minutos
+        </h1>
+        <p class="text-slate-400 text-xs sm:text-sm max-w-xl mx-auto">
+            Calculamos el valor comercial real de tu vehículo con base en más de 50.000 transacciones del mercado automotriz.
+        </p>
+    </div>
+</div>
+
+<div class="max-w-4xl mx-auto px-4 sm:px-6 py-12">
+    
+    <div class="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-xl space-y-8">
+        
+        <form action="/api/tasador/calcular" method="POST" class="space-y-8">
+            
+            <!-- Step 1: Identificación -->
+            <div>
+                <div class="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+                    <span class="w-6 h-6 rounded-full bg-brand-600 text-white text-xs font-black flex items-center justify-center">1</span>
+                    <h3 class="font-display font-black text-slate-900 text-base">Identificación del Vehículo</h3>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Placa del Vehículo</label>
+                        <input type="text" name="plate" required placeholder="Ej: ABC-123" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-mono font-bold uppercase focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Número VIN (Opcional pero recomendado)</label>
+                        <input type="text" name="vin" placeholder="Ej: WBA33AY08NF..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-mono uppercase focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Marca, Modelo y Año -->
+            <div>
+                <div class="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+                    <span class="w-6 h-6 rounded-full bg-brand-600 text-white text-xs font-black flex items-center justify-center">2</span>
+                    <h3 class="font-display font-black text-slate-900 text-base">Datos Técnicos y Uso</h3>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Marca</label>
+                        <select name="make" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                            <option value="Toyota">Toyota</option>
+                            <option value="Mazda">Mazda</option>
+                            <option value="BMW">BMW</option>
+                            <option value="Audi">Audi</option>
+                            <option value="Chevrolet">Chevrolet</option>
+                            <option value="Ford">Ford</option>
+                            <option value="Renault">Renault</option>
+                            <option value="Volkswagen">Volkswagen</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Modelo / Línea</label>
+                        <input type="text" name="model" required placeholder="Ej: CX-5 / Corolla / M4" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Año de Fabricación</label>
+                        <select name="year" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                            <option value="2024">2024</option>
+                            <option value="2023">2023</option>
+                            <option value="2022">2022</option>
+                            <option value="2021" selected>2021</option>
+                            <option value="2020">2020</option>
+                            <option value="2019">2019</option>
+                            <option value="2018">2018</option>
+                            <option value="2017">2017</option>
+                            <option value="2016">2016</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Kilometraje Actual (km)</label>
+                        <input type="number" name="mileage" required placeholder="Ej: 42000" value="42000" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Estado General del Auto</label>
+                        <select name="condition" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                            <option value="excelente">Excelente (Mantenimientos en concesionario, pintura original)</option>
+                            <option value="bueno" selected>Bueno (Detalles menores de uso cotidiano)</option>
+                            <option value="regular">Regular (Requiere pintura o ajustes mecánicos)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Contacto -->
+            <div>
+                <div class="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+                    <span class="w-6 h-6 rounded-full bg-brand-600 text-white text-xs font-black flex items-center justify-center">3</span>
+                    <h3 class="font-display font-black text-slate-900 text-base">Datos para Recibir la Oferta</h3>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Número de Celular / WhatsApp</label>
+                        <input type="tel" name="phone" required placeholder="+57 300 123 4567" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Correo Electrónico</label>
+                        <input type="email" name="email" required placeholder="correo@ejemplo.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-4">
+                <button type="submit" class="w-full py-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-2xl transition shadow-xl shadow-amber-500/25 text-sm uppercase tracking-wider">
+                    ⚡ Calcular Valor Comercial y Oferta Instantánea
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<%- include('footer') %>

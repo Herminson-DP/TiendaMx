@@ -1,160 +1,614 @@
 <%- include('header') %>
 
-<div class="flex-between" style="margin-bottom: 24px;">
-    <h2>Tu Carrito de Compras (<%= details.items.length %> <%= details.items.length === 1 ? 'artículo' : 'artículos' %>)</h2>
-    <a href="/index.php" class="btn btn-secondary btn-sm">Seguir Comprando</a>
-</div>
-
-<% if (!details.items || details.items.length === 0) { %>
-    <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 16px; border: 1px solid var(--border);">
-        <div style="font-size: 3.5rem; margin-bottom: 16px;">🛒</div>
-        <h3>Tu carrito actualmente está vacío</h3>
-        <p style="color: var(--text-muted); margin: 8px 0 24px;">Explora nuestras ofertas y encuentra los mejores productos al mejor precio.</p>
-        <a href="/index.php" class="btn btn-primary">Ir al Catálogo</a>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-8 border-b border-slate-200 gap-4">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="bg-brand-100 text-brand-700 font-bold text-xs px-2.5 py-0.5 rounded-lg uppercase tracking-wider">
+                    Compra Segura de Autopartes
+                </span>
+                <span class="text-xs text-slate-400 font-medium">AutoHub Colombia</span>
+            </div>
+            <h1 class="font-display text-3xl font-black text-slate-900 mt-1">Carrito de Compras & Pago de Repuestos</h1>
+            <p class="text-xs text-slate-500 mt-1">Revisa tus piezas, ingresa los datos de entrega y selecciona tu método de pago o banco para finalizar.</p>
+        </div>
+        <a href="/autopartes" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition">
+            <span>&larr;</span> Seguir Comprando Repuestos
+        </a>
     </div>
-<% } else { %>
-    <div class="cart-layout">
-        <!-- Left: Cart Items List -->
-        <div class="cart-items-box">
-            <!-- Free Shipping Progress Tracker -->
-            <div class="free-shipping-card">
-                <div class="flex-between" style="font-size: 0.9rem; font-weight: 600;">
-                    <% if (details.subtotal >= details.freeThreshold || (details.coupon && details.coupon.type === 'free_shipping')) { %>
-                        <span style="color: #065f46;">🎉 ¡Genial! Tu pedido califica para <strong>ENVÍO GRATIS A TODA COLOMBIA</strong></span>
-                        <span style="color: #065f46;">100%</span>
-                    <% } else { %>
-                        <span style="color: var(--primary);">🚚 Agrega <strong><%= formatMoney(details.missingForFreeShipping) %> COP</strong> más para obtener <strong>Envío Gratis</strong></span>
-                        <span style="color: var(--primary);"><%= details.freeShippingProgress %>%</span>
-                    <% } %>
+
+    <% if (items.length === 0) { %>
+        <div class="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-sm max-w-2xl mx-auto space-y-4">
+            <div class="text-6xl">🛒</div>
+            <h2 class="font-display font-black text-2xl text-slate-900">Tu carrito de autopartes está vacío</h2>
+            <p class="text-xs text-slate-500">Busca repuestos compatibles con tu vehículo en nuestro catálogo certificado.</p>
+            <a href="/autopartes" class="inline-block px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white text-xs font-black rounded-xl transition shadow-lg shadow-brand-600/30 uppercase tracking-wider">
+                Explorar Catálogo de Repuestos
+            </a>
+        </div>
+    <% } else { %>
+        <% if (typeof currentUser === 'undefined' || !currentUser) { %>
+            <!-- Auth Warning Notice for Unauthenticated Users -->
+            <div class="mb-6 p-4 sm:p-5 rounded-3xl bg-amber-50 border-2 border-amber-200 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-fadeIn">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-lg font-black shrink-0 shadow-md">
+                        🔒
+                    </div>
+                    <div>
+                        <h4 class="font-black text-sm text-amber-900">Debes iniciar sesión o registrarte para completar tu compra</h4>
+                        <p class="text-xs text-amber-800/90 mt-0.5">Para emitir tu factura electrónica con garantía y coordinar el despacho seguro, ingresa con tu cuenta o regístrate en 30 segundos.</p>
+                    </div>
                 </div>
-                <div class="progress-bar-bg">
-                    <div class="progress-bar-fill" style="width: <%= details.subtotal >= details.freeThreshold ? 100 : details.freeShippingProgress %>%;"></div>
+                <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                    <button 
+                        type="button" 
+                        onclick="showAuthRequiredModal('/carrito')" 
+                        class="flex-1 sm:flex-none px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-xl text-xs uppercase tracking-wider transition shadow-md"
+                    >
+                        Ingresar / Registrarme &rarr;
+                    </button>
                 </div>
             </div>
+        <% } %>
 
-            <!-- Items -->
-            <% details.items.forEach(item => { %>
-                <div class="cart-item-row">
-                    <img 
-                        src="<%= item.product.image %>" 
-                        alt="<%= item.product.name %>" 
-                        class="cart-thumb"
-                        onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60'"
-                    >
-                    <div>
-                        <span class="badge-tag" style="background: #e0e7ff; color: #3730a3; font-size: 0.7rem; margin-bottom: 4px; display: inline-block;">
-                            <%= item.product.category %>
-                        </span>
-                        <h4 style="font-size: 1.05rem; margin-bottom: 4px;">
-                            <a href="/index.php?action=product&id=<%= item.product.id %>"><%= item.product.name %></a>
-                        </h4>
-                        <div style="font-size: 0.85rem; color: var(--text-muted);">
-                            Precio Unitario: <strong><%= formatMoney(item.unit_price) %></strong>
+        <form action="/api/checkout/process" method="POST" id="cartCheckoutForm" onsubmit="return checkCartAuth(event);" class="space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- LEFT COLUMN: CART ITEMS + SHIPPING INFO + PAYMENT METHODS -->
+                <div class="lg:col-span-8 space-y-6">
+                    
+                    <!-- 1. CART ITEMS TABLE -->
+                    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between">
+                            <h3 class="font-display font-black text-slate-900 text-base flex items-center gap-2">
+                                <span>🛒</span> 1. Piezas en tu Carrito (<%= items.reduce((acc, i) => acc + i.quantity, 0) %> artículos)
+                            </h3>
+                            <span class="text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                                ✓ En Stock Disponible
+                            </span>
+                        </div>
+
+                        <div class="p-6 divide-y divide-slate-100">
+                            <% items.forEach(item => { %>
+                                <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                    <div class="flex items-center gap-4">
+                                        <img src="<%= item.part.image %>" alt="<%= item.part.name %>" class="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-2xl border border-slate-100 flex-shrink-0">
+                                        <div>
+                                            <span class="text-[10px] font-mono text-slate-400 block">SKU: <%= item.part.sku %></span>
+                                            <h4 class="font-black text-slate-900 text-sm leading-snug">
+                                                <a href="/autopartes/<%= item.part.id %>" class="hover:text-brand-600 transition"><%= item.part.name %></a>
+                                            </h4>
+                                            <span class="text-xs text-slate-500"><%= item.part.brand %> • <%= item.part.category %></span>
+                                            <div class="text-xs font-bold text-slate-800 mt-1 sm:hidden">
+                                                <%= formatCOP(item.part.price_cop) %> c/u
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between w-full sm:w-auto gap-5">
+                                        <!-- Quantity badge -->
+                                        <div class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl">
+                                            Cant: <%= item.quantity %>
+                                        </div>
+
+                                        <!-- Price total -->
+                                        <div class="text-right">
+                                            <span class="font-black text-slate-900 text-sm block"><%= formatCOP(item.totalCOP) %></span>
+                                            <span class="text-[10px] text-slate-400 block"><%= formatUSD(item.totalUSD) %></span>
+                                        </div>
+
+                                        <!-- Remove button -->
+                                        <button 
+                                            type="button" 
+                                            onclick="removeCartItem('<%= item.part.id %>')"
+                                            class="text-slate-400 hover:text-red-500 text-sm p-1 transition" 
+                                            title="Eliminar del carrito"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                </div>
+                            <% }); %>
                         </div>
                     </div>
 
-                    <!-- Quantity Stepper -->
-                    <div>
-                        <form action="/index.php?action=update-cart" method="POST" class="auto-update-form" style="margin: 0;">
-                            <input type="hidden" name="product_id" value="<%= item.product.id %>">
-                            <div class="qty-control">
-                                <button type="button" class="qty-btn" data-step="-1">-</button>
-                                <input type="number" name="quantity" value="<%= item.quantity %>" min="1" max="<%= item.product.stock || 99 %>" class="qty-input-box">
-                                <button type="button" class="qty-btn" data-step="1">+</button>
+                    <!-- Free Shipping Progress Banner -->
+                    <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-3">
+                        <span class="text-2xl">🚚</span>
+                        <div>
+                            <% if (shippingCOP === 0) { %>
+                                <span class="font-black block text-emerald-950">¡Calificas para Envío Gratis a toda Colombia!</span>
+                                <span class="text-[11px] text-emerald-700">Tu compra supera los $200.000 COP. Despacho prioritario asegurado en 24h.</span>
+                            <% } else { %>
+                                <span class="font-black block text-slate-900">Agrega <%= formatCOP(200000 - subtotalCOP) %> más para obtener Envío Gratis.</span>
+                                <span class="text-[11px] text-slate-600">Tarifa actual de envío estimada por peso (<%= totalWeightKg.toFixed(2) %> kg): <%= formatCOP(shippingCOP) %>.</span>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <!-- 2. SHIPPING & CUSTOMER DETAILS -->
+                    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
+                        <h3 class="font-display font-black text-slate-900 text-base flex items-center gap-2">
+                            <span>📦</span> 2. Dirección de Envío & Datos del Comprador
+                        </h3>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Nombre *</label>
+                                <input type="text" name="first_name" required placeholder="Carlos" value="Carlos" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
                             </div>
-                        </form>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Apellidos *</label>
+                                <input type="text" name="last_name" required placeholder="Gómez" value="Gómez" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Email de Confirmación *</label>
+                                <input type="email" name="email" required placeholder="carlos.gomez@ejemplo.com" value="carlos.gomez@ejemplo.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Teléfono Móvil / WhatsApp *</label>
+                                <input type="tel" name="phone" required placeholder="+57 310 987 6543" value="+57 310 987 6543" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Dirección de Entrega (Calle, Carrera, Apto / Casa) *</label>
+                                <input type="text" name="address" required placeholder="Calle 93B # 13-45 Apto 402" value="Calle 93B # 13-45 Apto 402" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Ciudad / Municipio *</label>
+                                <input type="text" name="city" required placeholder="Bogotá D.C." value="Bogotá D.C." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Departamento *</label>
+                                <select name="department" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                    <option value="Cundinamarca" selected>Cundinamarca / Bogotá</option>
+                                    <option value="Antioquia">Antioquia / Medellín</option>
+                                    <option value="Valle del Cauca">Valle del Cauca / Cali</option>
+                                    <option value="Atlántico">Atlántico / Barranquilla</option>
+                                    <option value="Santander">Santander / Bucaramanga</option>
+                                    <option value="Bolívar">Bolívar / Cartagena</option>
+                                    <option value="Risaralda">Risaralda / Pereira</option>
+                                    <option value="Caldas">Caldas / Manizales</option>
+                                    <option value="Quindío">Quindío / Armenia</option>
+                                    <option value="Tolima">Tolima / Ibagué</option>
+                                    <option value="Huila">Huila / Neiva</option>
+                                    <option value="Norte de Santander">Norte de Santander / Cúcuta</option>
+                                    <option value="Meta">Meta / Villavicencio</option>
+                                    <option value="Boyacá">Boyacá / Tunja</option>
+                                    <option value="Nariño">Nariño / Pasto</option>
+                                    <option value="Cauca">Cauca / Popayán</option>
+                                    <option value="Cesar">Cesar / Valledupar</option>
+                                    <option value="Córdoba">Córdoba / Montería</option>
+                                    <option value="Magdalena">Magdalena / Santa Marta</option>
+                                    <option value="Sucre">Sucre / Sincelejo</option>
+                                    <option value="La Guajira">La Guajira / Riohacha</option>
+                                    <option value="Casanare">Casanare / Yopal</option>
+                                    <option value="Arauca">Arauca</option>
+                                    <option value="Caquetá">Caquetá / Florencia</option>
+                                    <option value="Putumayo">Putumayo / Mocoa</option>
+                                    <option value="San Andrés y Providencia">San Andrés y Providencia</option>
+                                    <option value="Amazonas">Amazonas / Leticia</option>
+                                    <option value="Chocó">Chocó / Quibdó</option>
+                                    <option value="Guaviare">Guaviare</option>
+                                    <option value="Guainía">Guainía</option>
+                                    <option value="Vaupés">Vaupés</option>
+                                    <option value="Vichada">Vichada</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Installation at Partner Workshop -->
+                        <div class="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200/80">
+                            <label class="flex items-start gap-2.5 cursor-pointer">
+                                <input type="checkbox" name="install_in_partner_shop" value="1" class="mt-0.5 rounded text-brand-600 focus:ring-brand-500">
+                                <div>
+                                    <span class="text-xs font-black text-blue-950 block">🔧 Deseo instalación profesional en Taller Aliado AutoHub</span>
+                                    <span class="text-[11px] text-blue-800">Coordinaremos tu cita en el taller certificado más cercano a tu ubicación con tarifa preferencial.</span>
+                                </div>
+                            </label>
+                        </div>
                     </div>
 
-                    <!-- Subtotal per product -->
-                    <div style="text-align: right;">
-                        <strong style="font-size: 1.15rem; color: var(--secondary);"><%= formatMoney(item.total) %></strong>
+                    <!-- 3. PAYMENT METHOD SELECTION & DYNAMIC BANK FIELDS -->
+                    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                            <div>
+                                <h3 class="font-display font-black text-slate-900 text-base flex items-center gap-2">
+                                    <span>💳</span> 3. Selecciona tu Método de Pago o Banco
+                                </h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Elige tu entidad o pasarela para procesar el pago seguro de tus autopartes.</p>
+                            </div>
+                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full">
+                                🔒 SSL 256-bit
+                            </span>
+                        </div>
+
+                        <!-- Selector Pills Grid -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                            
+                            <!-- PSE -->
+                            <label class="cart-payment-method-card border-2 border-brand-500 bg-brand-50/60 rounded-2xl p-3 cursor-pointer transition flex flex-col items-center text-center gap-1 hover:border-brand-600">
+                                <input type="radio" name="payment_method" value="pse" checked onchange="switchCartPaymentMethod('pse')" class="sr-only">
+                                <span class="text-2xl">🏛️</span>
+                                <span class="text-xs font-black text-slate-900 block leading-tight">PSE Bancos</span>
+                                <span class="text-[10px] text-slate-500 font-medium leading-tight">Débito en Línea</span>
+                            </label>
+
+                            <!-- Billeteras -->
+                            <label class="cart-payment-method-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-3 cursor-pointer transition flex flex-col items-center text-center gap-1">
+                                <input type="radio" name="payment_method" value="wallet" onchange="switchCartPaymentMethod('wallet')" class="sr-only">
+                                <span class="text-2xl">📱</span>
+                                <span class="text-xs font-black text-slate-900 block leading-tight">Nequi / Daviplata</span>
+                                <span class="text-[10px] text-slate-500 font-medium leading-tight">Notificación Push</span>
+                            </label>
+
+                            <!-- Tarjeta de Crédito -->
+                            <label class="cart-payment-method-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-3 cursor-pointer transition flex flex-col items-center text-center gap-1">
+                                <input type="radio" name="payment_method" value="card" onchange="switchCartPaymentMethod('card')" class="sr-only">
+                                <span class="text-2xl">💳</span>
+                                <span class="text-xs font-black text-slate-900 block leading-tight">Tarjeta Crédito</span>
+                                <span class="text-[10px] text-slate-500 font-medium leading-tight">Hasta 36 Cuotas</span>
+                            </label>
+
+                            <!-- Transferencia Bancaria -->
+                            <label class="cart-payment-method-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-3 cursor-pointer transition flex flex-col items-center text-center gap-1">
+                                <input type="radio" name="payment_method" value="transfer" onchange="switchCartPaymentMethod('transfer')" class="sr-only">
+                                <span class="text-2xl">📑</span>
+                                <span class="text-xs font-black text-slate-900 block leading-tight">Transferencia</span>
+                                <span class="text-[10px] text-slate-500 font-medium leading-tight">QR Bancolombia</span>
+                            </label>
+
+                        </div>
+
+                        <!-- 1. PSE FIELDS CONTAINER -->
+                        <div id="cart-method-pse" class="cart-payment-box bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-3.5 animate-fadeIn">
+                            <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base">🏛️</span>
+                                    <span class="font-black text-xs text-slate-800">Pagos Seguros en Línea (PSE)</span>
+                                </div>
+                                <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">ACH Colombia Oficial</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="sm:col-span-2">
+                                    <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Selecciona tu Banco o Entidad Financiera *</label>
+                                    <select name="pse_bank" id="cartPseBankSelect" onchange="updateCartPseBankInfo(this.value)" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                        <option value="Bancolombia" selected>Bancolombia (Personas y Empresas)</option>
+                                        <option value="Banco de Bogotá">Banco de Bogotá</option>
+                                        <option value="Davivienda">Davivienda</option>
+                                        <option value="BBVA Colombia">BBVA Colombia</option>
+                                        <option value="Banco de Occidente">Banco de Occidente</option>
+                                        <option value="Banco Popular">Banco Popular</option>
+                                        <option value="Banco AV Villas">Banco AV Villas</option>
+                                        <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
+                                        <option value="Banco Caja Social">Banco Caja Social</option>
+                                        <option value="Banco Itaú Colombia">Banco Itaú Colombia</option>
+                                        <option value="Banco Agrario de Colombia">Banco Agrario de Colombia</option>
+                                        <option value="Banco Santander Colombia">Banco Santander</option>
+                                        <option value="Lulo Bank">Lulo Bank</option>
+                                        <option value="Nu Colombia (Nubank)">Nu Colombia (Nubank)</option>
+                                        <option value="Dale!">Dale!</option>
+                                        <option value="Nequi">Nequi (vía PSE)</option>
+                                        <option value="Daviplata">Daviplata (vía PSE)</option>
+                                        <option value="RappiPay">RappiPay / Compañía de Financiamiento</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Tipo de Persona *</label>
+                                    <select name="pse_person_type" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                        <option value="Persona Natural">Persona Natural</option>
+                                        <option value="Persona Jurídica">Persona Jurídica (Empresas)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Tipo de Documento *</label>
+                                    <select name="pse_doc_type" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                        <option value="CC">Cédula de Ciudadanía (CC)</option>
+                                        <option value="CE">Cédula de Extranjería (CE)</option>
+                                        <option value="NIT">NIT</option>
+                                        <option value="PAS">Pasaporte</option>
+                                        <option value="PPT">Permiso por Protección Temporal</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Número de Documento *</label>
+                                    <input type="text" name="pse_doc_number" placeholder="Ej: 1098765432" value="1098765432" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                </div>
+
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Email Registrado en PSE *</label>
+                                    <input type="email" name="pse_email" placeholder="correo@banco.com" value="carlos.gomez@ejemplo.com" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                </div>
+                            </div>
+
+                            <div id="cartPseGuidance" class="p-3 bg-blue-50/80 rounded-xl border border-blue-200/80 text-[11px] text-blue-900 flex items-start gap-2">
+                                <span class="text-sm shrink-0">ℹ️</span>
+                                <div>
+                                    <strong id="cartPseBankTitle">Bancolombia:</strong> 
+                                    <span id="cartPseInstruction">Ten a la mano tu Clave Dinámica o App Móvil Bancolombia para autorizar el débito seguro en línea.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. WALLET FIELDS CONTAINER -->
+                        <div id="cart-method-wallet" class="cart-payment-box bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-3.5 hidden animate-fadeIn">
+                            <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base">📱</span>
+                                    <span class="font-black text-xs text-slate-800">Billeteras Móviles Directas</span>
+                                </div>
+                                <span class="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">Notificación Push</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Selecciona Billetera *</label>
+                                    <select name="wallet_provider" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                        <option value="Nequi" selected>Nequi (Bancolombia)</option>
+                                        <option value="Daviplata">Daviplata (Davivienda)</option>
+                                        <option value="Dale!">Dale! (Grupo Aval)</option>
+                                        <option value="Transfiya">Transfiya Interoperable</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Número de Celular *</label>
+                                    <input type="tel" name="wallet_phone" placeholder="310 987 6543" value="3109876543" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                </div>
+                            </div>
+                            <div class="p-3 bg-purple-50 rounded-xl border border-purple-200 text-[11px] text-purple-900">
+                                🔔 Recibirás una notificación instantánea en tu celular para autorizar el cobro seguro en tu app.
+                            </div>
+                        </div>
+
+                        <!-- 3. CARD FIELDS CONTAINER -->
+                        <div id="cart-method-card" class="cart-payment-box bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-3.5 hidden animate-fadeIn">
+                            <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base">💳</span>
+                                    <span class="font-black text-xs text-slate-800">Tarjeta de Crédito o Débito</span>
+                                </div>
+                                <div class="flex items-center gap-1.5" id="cartCardBadge">
+                                    <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">Visa / MasterCard / Amex</span>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="sm:col-span-2">
+                                    <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Número de Tarjeta *</label>
+                                    <input type="text" name="card_number" id="cartCardNumInput" oninput="detectCartCardBrand(this.value)" placeholder="4532 8921 0492 8821" value="4532 8921 0492 8821" maxlength="19" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-mono font-bold tracking-wider focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Nombre en la Tarjeta *</label>
+                                    <input type="text" name="card_holder" placeholder="CARLOS GOMEZ" value="CARLOS GOMEZ" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold uppercase focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Vence (MM/AA) *</label>
+                                        <input type="text" name="card_exp" placeholder="08/28" value="08/28" maxlength="5" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-center focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">CVV *</label>
+                                        <input type="password" name="card_cvv" placeholder="•••" value="892" maxlength="4" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-center focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Número de Cuotas</label>
+                                    <select name="card_installments" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                        <option value="1">1 Cuota (Sin intereses)</option>
+                                        <option value="3">3 Cuotas</option>
+                                        <option value="6">6 Cuotas</option>
+                                        <option value="12">12 Cuotas</option>
+                                        <option value="24">24 Cuotas</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Cédula del Titular</label>
+                                    <input type="text" name="card_doc_number" placeholder="1098765432" value="1098765432" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. TRANSFER FIELDS CONTAINER -->
+                        <div id="cart-method-transfer" class="cart-payment-box bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-3.5 hidden animate-fadeIn">
+                            <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base">📑</span>
+                                    <span class="font-black text-xs text-slate-800">Transferencia Bancaria Directa</span>
+                                </div>
+                                <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Sin Recargos</span>
+                            </div>
+
+                            <div class="p-3.5 bg-emerald-950 text-white rounded-xl text-xs space-y-1">
+                                <div class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Cuenta Oficial AutoHub Motors S.A.S.</div>
+                                <div class="font-mono font-black text-sm text-emerald-200">Bancolombia Cta Corriente: 048-928192-11</div>
+                                <div class="text-[10px] text-slate-400">NIT: 901.482.109-3</div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Banco Origen de la Transferencia *</label>
+                                    <input type="text" name="transfer_origin_bank" placeholder="Bancolombia, etc." value="Bancolombia" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">No. Comprobante / Aprobación *</label>
+                                    <input type="text" name="transfer_ref_number" placeholder="Ej: TRF-9182310" value="TRF-9182310" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
-                    <!-- Delete button -->
-                    <div>
-                        <a href="/index.php?action=remove-from-cart&id=<%= item.product.id %>" class="btn-danger-sm" title="Eliminar del carrito" style="padding: 6px 10px;">
-                            ✕
-                        </a>
+                </div>
+
+                <!-- RIGHT COLUMN: ORDER SUMMARY & IMMEDIATE CHECKOUT BUTTON -->
+                <div class="lg:col-span-4">
+                    <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-5 sticky top-28">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <h3 class="font-display font-black text-slate-900 text-lg">Resumen del Pedido</h3>
+                            <span class="text-[10px] text-slate-400 font-mono">IVA Incluido</span>
+                        </div>
+                        
+                        <div class="space-y-3 text-xs text-slate-600">
+                            <div class="flex justify-between">
+                                <span>Subtotal Repuestos</span>
+                                <span class="font-bold text-slate-900"><%= formatCOP(subtotalCOP) %></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Envío a Domicilio</span>
+                                <span class="font-bold <%= shippingCOP === 0 ? 'text-emerald-600' : 'text-slate-900' %>">
+                                    <%= shippingCOP === 0 ? '¡GRATIS!' : formatCOP(shippingCOP) %>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Garantía de Compatibilidad OEM</span>
+                                <span class="font-bold text-emerald-600">100% Cubierta</span>
+                            </div>
+                            
+                            <div class="pt-3 border-t border-slate-100 flex justify-between items-baseline">
+                                <span class="font-black text-slate-900 text-base">Total a Pagar</span>
+                                <div class="text-right">
+                                    <span class="font-black text-slate-900 text-2xl block"><%= formatCOP(totalCOP) %></span>
+                                    <span class="text-[10px] text-slate-400 block font-mono"><%= formatUSD(totalCOP / 4000) %></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Submit Button -->
+                        <div class="pt-2">
+                            <button 
+                                type="submit" 
+                                class="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-2xl transition shadow-xl shadow-brand-600/30 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <span>🔒</span> Pagar & Finalizar Compra de Autopartes
+                            </button>
+                        </div>
+
+                        <!-- Guarantees -->
+                        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-[11px] text-slate-600 space-y-2">
+                            <div class="flex items-center gap-2 font-bold text-slate-800">
+                                <span>🛡️</span> Compra Protegida AutoHub
+                            </div>
+                            <p class="text-[10px] leading-relaxed text-slate-500">
+                                Despacho asegurado con número de rastreo satelital. Si la pieza no ajusta a tu modelo, devolución gratuita en 30 días.
+                            </p>
+                        </div>
+
+                        <div class="pt-1 text-[11px] text-slate-400 text-center space-y-1">
+                            <p>🔒 Pasarela Bancaria Cifrada SSL 256 bits</p>
+                            <p class="text-[10px]">Aceptamos PSE, Nequi, Daviplata, Tarjetas y Transferencias</p>
+                        </div>
                     </div>
                 </div>
-            <% }); %>
 
-            <!-- Coupon Recommendations & Promos -->
-            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px dashed var(--border);">
-                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Cupones sugeridos disponibles:</span>
-                <div class="flex-gap" style="margin-top: 8px; flex-wrap: wrap;">
-                    <span class="btn-copy-code" data-code="BIENVENIDO10" style="cursor: pointer; background: #eef2ff; color: #4338ca; border: 1px dashed #6366f1; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700;">
-                        BIENVENIDO10 (-10%)
-                    </span>
-                    <span class="btn-copy-code" data-code="ENVIOGRATIS" style="cursor: pointer; background: #ecfdf5; color: #065f46; border: 1px dashed #10b981; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700;">
-                        ENVIOGRATIS
-                    </span>
-                    <span class="btn-copy-code" data-code="DESCUENTO50K" style="cursor: pointer; background: #fffbeb; color: #92400e; border: 1px dashed #f59e0b; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700;">
-                        DESCUENTO50K (-$50.000 COP)
-                    </span>
-                </div>
             </div>
-        </div>
+        </form>
 
-        <!-- Right: Order Summary -->
-        <div class="order-summary-card">
-            <h3 style="margin-bottom: 20px; font-size: 1.3rem;">Resumen de la Compra</h3>
+        <!-- Hidden form for removing items -->
+        <form id="removeCartItemForm" action="/api/cart/remove" method="POST" class="hidden">
+            <input type="hidden" name="part_id" id="removePartIdInput">
+        </form>
+    <% } %>
 
-            <!-- Coupon Input Box -->
-            <div class="coupon-box">
-                <label style="font-size: 0.85rem; font-weight: 600; color: var(--secondary);">¿Tienes un cupón de descuento?</label>
-                <% if (details.coupon) { %>
-                    <div class="coupon-pill-active">
-                        <span>🏷️ <strong><%= details.coupon.code %></strong> (<%= details.coupon.description %>)</span>
-                        <a href="/index.php?action=remove-coupon" style="color: #991b1b; text-decoration: none; font-weight: 700; margin-left: 8px;" title="Quitar cupón">✕</a>
-                    </div>
-                <% } else { %>
-                    <form action="/index.php?action=apply-coupon" method="POST" class="coupon-input-group">
-                        <input type="text" name="coupon_code" placeholder="Código ej. BIENVENIDO10" required class="filter-input" style="flex: 1;">
-                        <button type="submit" class="btn btn-primary btn-sm">Aplicar</button>
-                    </form>
-                <% } %>
-            </div>
+</div>
 
-            <!-- Price Breakdown -->
-            <div class="summary-row">
-                <span>Subtotal</span>
-                <span><%= formatMoney(details.subtotal) %></span>
-            </div>
+<!-- SCRIPT FOR DYNAMIC PAYMENT SWITCHING & REMOVAL IN CART -->
+<script>
+    function checkCartAuth(e) {
+        if (!window.IS_USER_LOGGED_IN) {
+            if (e) e.preventDefault();
+            showAuthRequiredModal('/carrito', 'Para finalizar y pagar tu pedido de autopartes debes registrarte si no estás registrado o iniciar sesión si ya tienes cuenta en AutoHub.');
+            return false;
+        }
+        return true;
+    }
 
-            <% if (details.discountAmount > 0) { %>
-                <div class="summary-row" style="color: #059669; font-weight: 600;">
-                    <span>Descuento aplicado (<%= details.coupon.code %>)</span>
-                    <span>-<%= formatMoney(details.discountAmount) %></span>
-                </div>
-            <% } %>
+    function removeCartItem(partId) {
+        if (confirm('¿Deseas eliminar este repuesto del carrito?')) {
+            const form = document.getElementById('removeCartItemForm');
+            const input = document.getElementById('removePartIdInput');
+            if (form && input) {
+                input.value = partId;
+                form.submit();
+            }
+        }
+    }
 
-            <div class="summary-row">
-                <span>Impuestos IVA (<%= config.tax || 19 %>%)</span>
-                <span><%= formatMoney(details.tax) %></span>
-            </div>
+    function switchCartPaymentMethod(methodKey) {
+        // Hide all method field boxes
+        const boxes = document.querySelectorAll('.cart-payment-box');
+        boxes.forEach(b => b.classList.add('hidden'));
 
-            <div class="summary-row">
-                <span>Costo de Envío Estimado</span>
-                <span><%= details.shipping === 0 ? 'GRATIS' : formatMoney(details.shipping) %></span>
-            </div>
+        // Show target box
+        const target = document.getElementById('cart-method-' + methodKey);
+        if (target) {
+            target.classList.remove('hidden');
+        }
 
-            <div class="summary-row summary-total">
-                <span>Total Estimado</span>
-                <span><%= formatMoney(details.final_total) %> COP</span>
-            </div>
+        // Update active styling on cards
+        const cards = document.querySelectorAll('.cart-payment-method-card');
+        cards.forEach(c => {
+            const input = c.querySelector('input[type="radio"]');
+            if (input && input.value === methodKey) {
+                input.checked = true;
+                c.classList.add('border-brand-500', 'bg-brand-50/60');
+                c.classList.remove('border-slate-200');
+            } else {
+                c.classList.remove('border-brand-500', 'bg-brand-50/60');
+                c.classList.add('border-slate-200');
+            }
+        });
+    }
 
-            <div style="margin-top: 24px;">
-                <a href="/index.php?action=checkout" class="btn btn-primary btn-block btn-lg" style="box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);">
-                    🔒 Continuar al Pago
-                </a>
-            </div>
+    function updateCartPseBankInfo(bankName) {
+        const titleEl = document.getElementById('cartPseBankTitle');
+        const instEl = document.getElementById('cartPseInstruction');
+        if (!titleEl || !instEl) return;
 
-            <div style="margin-top: 18px; font-size: 0.8rem; color: var(--text-muted); text-align: center;">
-                🔒 Transacción encriptada con tecnología SSL de 256 bits.
-            </div>
-        </div>
-    </div>
-<% } %>
+        titleEl.textContent = bankName + ':';
+        const bankInstructions = {
+            'Bancolombia': 'Ten a la mano tu Clave Dinámica o App Móvil Bancolombia para autorizar el débito seguro en línea.',
+            'Banco de Bogotá': 'Ingresa con tu clave segura del portal web o genera tu Token Digital en la App Móvil de Banco de Bogotá.',
+            'Davivienda': 'Ten listo tu número de identificación y tu clave virtual de Davivienda para autorizar en el portal seguro.',
+            'BBVA Colombia': 'Valida tu ingreso con Token BBVA o biometría facial desde la aplicación BBVA Móvil.',
+            'Banco de Occidente': 'Se solicitará tu clave de Banca Móvil y el código OTP enviado a tu número celular registrado.',
+            'Banco Popular': 'Accede con tu usuario y contraseña de Zona Transaccional del Banco Popular.',
+            'Banco AV Villas': 'Ingresa con tu contraseña de Banca Virtual y Token AV Villas.',
+            'Scotiabank Colpatria': 'Verifica la operación mediante el código de seguridad o Token de la App Scotiabank Colpatria.',
+            'Banco Caja Social': 'Ingresa con tu usuario amigo y clave de internet de Banco Caja Social.',
+            'Banco Itaú Colombia': 'Autoriza con tu clave de internet y el código dinámico Itaú.',
+            'Banco Agrario de Colombia': 'Usa tu usuario de Banca Virtual del Banco Agrario de Colombia.',
+            'Lulo Bank': 'Recibirás una notificación en tu App de Lulo Bank para aprobar el débito.',
+            'Nu Colombia (Nubank)': 'Se generará la orden de débito directo Nu con confirmación en la app de Nu.',
+            'Dale!': 'Ingresa con tu celular y clave de Dale! para débito en línea.',
+            'Nequi': 'Usa tu número celular Nequi y confirma la notificación push de pago.',
+            'Daviplata': 'Ingresa tu número de celular y confirma el código SMS de Daviplata.',
+            'RappiPay': 'Autoriza desde tu cuenta RappiPay con tu PIN de 4 dígitos.'
+        };
+        instEl.textContent = bankInstructions[bankName] || 'Serás dirigido a la plataforma segura de ' + bankName + ' con cifrado bancario ACH de 256 bits.';
+    }
+
+    function detectCartCardBrand(val) {
+        const clean = val.replace(/\D/g, '');
+        const badge = document.getElementById('cartCardBadge');
+        if (!badge) return;
+
+        if (clean.startsWith('4')) {
+            badge.innerHTML = '<span class="bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-black">VISA</span>';
+        } else if (clean.startsWith('5')) {
+            badge.innerHTML = '<span class="bg-orange-600 text-white px-2 py-0.5 rounded text-[10px] font-black">MasterCard</span>';
+        } else if (clean.startsWith('34') || clean.startsWith('37')) {
+            badge.innerHTML = '<span class="bg-sky-700 text-white px-2 py-0.5 rounded text-[10px] font-black">Amex</span>';
+        } else if (clean.startsWith('6')) {
+            badge.innerHTML = '<span class="bg-amber-600 text-white px-2 py-0.5 rounded text-[10px] font-black">Diners / Discover</span>';
+        } else {
+            badge.innerHTML = '<span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">Visa / MC / Amex</span>';
+        }
+    }
+</script>
 
 <%- include('footer') %>
+

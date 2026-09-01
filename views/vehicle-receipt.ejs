@@ -1,0 +1,169 @@
+<%- include('header') %>
+
+<div class="max-w-3xl mx-auto px-4 sm:px-6 py-16">
+    <div class="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-xl text-center space-y-6">
+        
+        <div class="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-3xl mx-auto">
+            ✓
+        </div>
+
+        <div>
+            <span class="text-xs font-black uppercase text-emerald-600 tracking-wider">Depósito de Reserva Aprobado</span>
+            <h1 class="font-display text-3xl font-black text-slate-900 mt-1">¡Tu Vehículo Ha Sido Apartado!</h1>
+            <p class="text-xs text-slate-500 mt-1">Hemos bloqueado la unidad en inventario exclusivo durante 72 horas para ti.</p>
+        </div>
+
+        <!-- Receipt Box -->
+        <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200 text-left space-y-4 text-xs">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-200">
+                <div>
+                    <span class="text-slate-400 font-bold block">Código de Reserva</span>
+                    <span class="font-mono font-black text-base text-slate-900"><%= reservation.id %></span>
+                </div>
+                <div class="text-right">
+                    <span class="text-slate-400 font-bold block">Fecha & Hora</span>
+                    <span class="text-slate-700 font-semibold"><%= reservation.date %></span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <span class="text-slate-400 font-bold block mb-0.5">Vehículo Reservado</span>
+                    <span class="font-black text-slate-900 text-sm"><%= reservation.vehicle.title %></span>
+                    <span class="text-[11px] text-slate-500 block">VIN: <%= reservation.vehicle.vin %> • <%= reservation.vehicle.city %></span>
+                </div>
+                <div>
+                    <span class="text-slate-400 font-bold block mb-0.5">Monto de Garantía</span>
+                    <span class="font-black text-emerald-600 text-base">$500 USD (<%= formatCOP(2000000) %>)</span>
+                    <span class="text-[10px] text-emerald-700 font-bold block">✓ Estado: <%= reservation.status %></span>
+                </div>
+            </div>
+
+            <!-- DETAILED PAYMENT METHOD & BANK INFORMATION BREAKDOWN -->
+            <div class="pt-3 border-t border-slate-200">
+                <span class="text-slate-400 font-bold block mb-2">Detalles del Método de Pago & Entidad Bancaria</span>
+                
+                <div class="p-3.5 bg-white rounded-xl border border-slate-200 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="text-base font-bold">💳</span>
+                            <span class="font-black text-slate-900"><%= reservation.payment_details ? reservation.payment_details.type : reservation.payment_method %></span>
+                        </div>
+                        <% if (reservation.payment_details && reservation.payment_details.authCode) { %>
+                            <span class="bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold px-2 py-0.5 rounded">
+                                <%= reservation.payment_details.authCode %>
+                            </span>
+                        <% } %>
+                    </div>
+
+                    <% if (reservation.payment_details) { %>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1 border-t border-slate-100">
+                            <% if (reservation.payment_details.bankName) { %>
+                                <div>
+                                    <span class="text-slate-400 block">Banco Emisor:</span>
+                                    <strong class="text-slate-800"><%= reservation.payment_details.bankName %></strong>
+                                </div>
+                            <% } %>
+
+                            <% if (reservation.payment_details.personType) { %>
+                                <div>
+                                    <span class="text-slate-400 block">Tipo de Persona:</span>
+                                    <strong class="text-slate-800"><%= reservation.payment_details.personType %></strong>
+                                </div>
+                            <% } %>
+
+                            <% if (reservation.payment_details.docNumber) { %>
+                                <div>
+                                    <span class="text-slate-400 block">Documento de Identidad:</span>
+                                    <strong class="text-slate-800"><%= reservation.payment_details.docType || 'CC' %> <%= reservation.payment_details.docNumber %></strong>
+                                </div>
+                            <% } %>
+
+                            <% if (reservation.payment_details.transactionRef) { %>
+                                <div>
+                                    <span class="text-slate-400 block">Referencia Transaccional:</span>
+                                    <strong class="text-slate-800 font-mono"><%= reservation.payment_details.transactionRef %></strong>
+                                </div>
+                            <% } %>
+
+                            <% if (reservation.payment_details.targetBank) { %>
+                                <div>
+                                    <span class="text-slate-400 block">Cuenta Receptora AutoHub:</span>
+                                    <strong class="text-slate-800"><%= reservation.payment_details.targetBank %></strong>
+                                </div>
+                            <% } %>
+
+                            <% if (reservation.payment_details.transferRef) { %>
+                                <div>
+                                    <span class="text-slate-400 block">No. Comprobante / Aprobación:</span>
+                                    <strong class="text-slate-800 font-mono"><%= reservation.payment_details.transferRef %></strong>
+                                </div>
+                            <% } %>
+
+                            <% if (reservation.payment_details.walletName) { %>
+                                <div>
+                                    <span class="text-slate-400 block">Billetera Digital:</span>
+                                    <strong class="text-purple-700 font-bold"><%= reservation.payment_details.walletName %> (<%= reservation.payment_details.walletPhone %>)</strong>
+                                </div>
+                            <% } %>
+
+                            <% if (reservation.payment_details.maskedCard) { %>
+                                <div>
+                                    <span class="text-slate-400 block">Tarjeta (<%= reservation.payment_details.cardBrand %>):</span>
+                                    <strong class="text-slate-800 font-mono"><%= reservation.payment_details.maskedCard %></strong>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block">Diferido a:</span>
+                                    <strong class="text-slate-800"><%= reservation.payment_details.installments %> cuota(s)</strong>
+                                </div>
+                            <% } %>
+
+                            <% if (reservation.payment_details.entityName) { %>
+                                <div>
+                                    <span class="text-slate-400 block">Entidad Financiera Aliada:</span>
+                                    <strong class="text-emerald-700"><%= reservation.payment_details.entityName %></strong>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block">Plazo Simulado:</span>
+                                    <strong class="text-slate-800"><%= reservation.payment_details.termMonths %> Meses</strong>
+                                </div>
+                            <% } %>
+
+                            <% if (reservation.payment_details.paypalEmail) { %>
+                                <div>
+                                    <span class="text-slate-400 block">Cuenta PayPal:</span>
+                                    <strong class="text-blue-700"><%= reservation.payment_details.paypalEmail %></strong>
+                                </div>
+                            <% } %>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-200">
+                <span class="text-slate-400 font-bold block mb-0.5">Datos del Comprador</span>
+                <p class="text-slate-800 font-bold"><%= reservation.customer.name %> • <%= reservation.customer.phone %> • <%= reservation.customer.email %></p>
+            </div>
+        </div>
+
+        <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-900 text-left flex items-start gap-3">
+            <span class="text-xl">📞</span>
+            <div>
+                <span class="font-bold block">Próximos Pasos:</span>
+                Tu asesor dedicado te contactará en los próximos 30 minutos para coordinar la entrega o el Test Drive en la ubicación acordada. Si requieres financiamiento, ya hemos iniciado la pre-aprobación con los bancos.
+            </div>
+        </div>
+
+        <div class="flex items-center justify-center gap-4 pt-4">
+            <a href="/vehiculos" class="px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 transition">
+                Volver al Catálogo
+            </a>
+            <a href="/" class="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-xs font-black text-white transition shadow-md">
+                Ir a la Página Principal
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<%- include('footer') %>

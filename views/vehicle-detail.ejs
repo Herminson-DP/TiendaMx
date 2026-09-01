@@ -1,0 +1,1025 @@
+<%- include('header') %>
+
+<!-- Breadcrumb -->
+<div class="bg-slate-100 border-b border-slate-200 py-3">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-xs font-semibold text-slate-500 flex items-center gap-2">
+        <a href="/" class="hover:text-slate-900">Inicio</a>
+        <span>/</span>
+        <a href="/vehiculos" class="hover:text-slate-900">Vehículos Certificados</a>
+        <span>/</span>
+        <span class="text-slate-900 font-bold"><%= vehicle.title %></span>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Vehicle Main Header -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between pb-6 mb-6 border-b border-slate-200 gap-4">
+        <div>
+            <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                <span class="bg-emerald-600 text-white text-xs font-black px-2.5 py-1 rounded-lg">
+                    ★ Peritaje <%= vehicle.inspection_score %>/10
+                </span>
+                <span class="bg-slate-900 text-white text-xs font-bold px-2.5 py-1 rounded-lg">
+                    <%= vehicle.condition %>
+                </span>
+                <span class="bg-brand-50 text-brand-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-brand-200">
+                    VIN: <%= vehicle.vin %>
+                </span>
+            </div>
+            <h1 class="font-display text-2xl sm:text-4xl font-black text-slate-900"><%= vehicle.title %></h1>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                Año <%= vehicle.year %> • <%= vehicle.mileage_km.toLocaleString('es-CO') %> km • <%= vehicle.fuel %> • <%= vehicle.transmission %> • Ubicado en <%= vehicle.city %>
+            </p>
+        </div>
+
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between lg:justify-end gap-6">
+            <div>
+                <span class="text-[11px] text-slate-400 block font-semibold">Precio de Contado</span>
+                <span class="text-2xl sm:text-3xl font-black text-slate-900"><%= formatUSD(vehicle.price_usd) %></span>
+                <span class="text-xs text-slate-500 font-semibold block"><%= formatCOP(vehicle.price_cop) %></span>
+            </div>
+            <button 
+                type="button" 
+                onclick="document.getElementById('reservationModal').classList.remove('hidden')" 
+                class="px-5 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-black transition shadow-lg shadow-brand-600/30"
+            >
+                Apartar por $500 USD
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN GRID: 360 VIEWER & SIDE ACTIONS -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
+        
+        <!-- 360 DEGREE INTERACTIVE VIEWER -->
+        <div class="lg:col-span-8 space-y-4">
+            <div class="bg-slate-950 rounded-3xl p-4 sm:p-6 text-white shadow-xl relative overflow-hidden border border-slate-800">
+                
+                <div class="flex items-center justify-between mb-3 text-xs">
+                    <span class="flex items-center gap-1.5 font-bold text-emerald-400">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Simulador de Giro 360° Exterior HD
+                    </span>
+                    <span class="text-slate-400 font-mono" id="angleLabel">Ángulo: 0° (Frontal)</span>
+                </div>
+
+                <!-- 360 View Frame -->
+                <div class="relative h-80 sm:h-[420px] rounded-2xl overflow-hidden bg-slate-900 flex items-center justify-center select-none cursor-grab" id="viewer360">
+                    <img 
+                        id="img360" 
+                        src="<%= vehicle.gallery_360[0] %>" 
+                        alt="<%= vehicle.title %> 360" 
+                        class="w-full h-full object-cover transition-opacity duration-150"
+                    >
+
+                    <!-- Hint Overlay -->
+                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-950/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-slate-700 text-[11px] text-slate-300 pointer-events-none flex items-center gap-2">
+                        <span>🔄</span> Arrastra horizontalmente o usa los controles para rotar
+                    </div>
+                </div>
+
+                <!-- Controls Bar -->
+                <div class="flex items-center justify-between mt-4 pt-3 border-t border-slate-800 flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                        <button 
+                            type="button" 
+                            onclick="prev360Angle()" 
+                            class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition"
+                        >
+                            ◀ Rotar Izquierda
+                        </button>
+                        <button 
+                            type="button" 
+                            onclick="next360Angle()" 
+                            class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition"
+                        >
+                            Rotar Derecha ▶
+                        </button>
+                    </div>
+
+                    <button 
+                        type="button" 
+                        id="autoRotateBtn" 
+                        onclick="toggleAutoRotate()" 
+                        class="px-3.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-xs font-black text-white transition flex items-center gap-1"
+                    >
+                        <span>▶</span> Auto-Rotar 360°
+                    </button>
+                </div>
+            </div>
+
+            <!-- Standard Image Gallery Thumbnails -->
+            <div class="grid grid-cols-4 gap-3">
+                <% vehicle.gallery.forEach((imgUrl, idx) => { %>
+                    <div 
+                        onclick="changeMainImg('<%= imgUrl %>')" 
+                        class="h-20 sm:h-24 rounded-2xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-brand-500 transition"
+                    >
+                        <img src="<%= imgUrl %>" alt="Foto <%= idx + 1 %>" class="w-full h-full object-cover">
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+
+        <!-- RIGHT SIDEBAR: QUICK SUMMARY & CTA -->
+        <div class="lg:col-span-4 space-y-6">
+            
+            <!-- Guaranteed Trust Card -->
+            <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+                <h3 class="font-display font-black text-slate-900 text-base">Garantía & Confianza AutoHub</h3>
+                
+                <div class="space-y-3 text-xs">
+                    <div class="flex items-start gap-3 p-3 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-100">
+                        <span class="text-xl">🛡️</span>
+                        <div>
+                            <span class="font-black block">1 Año de Garantía Mecánica</span>
+                            <span class="text-emerald-700 text-[11px]">Motor, caja de cambios y sistema eléctrico cubiertos al 100%.</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50 text-slate-800 border border-slate-100">
+                        <span class="text-xl">📋</span>
+                        <div>
+                            <span class="font-black block">Historial Legal Verificado</span>
+                            <span class="text-slate-500 text-[11px]">Cero siniestros graves, libre de prendas y listo para traspaso.</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50 text-slate-800 border border-slate-100">
+                        <span class="text-xl">🚚</span>
+                        <div>
+                            <span class="font-black block">Entrega a Domicilio o Test Drive</span>
+                            <span class="text-slate-500 text-[11px]">Llevamos el auto a tu casa para prueba de manejo.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2 space-y-2">
+                    <button 
+                        type="button" 
+                        onclick="openVehicleReservationModal()" 
+                        class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-xl transition shadow-lg shadow-brand-600/25 text-xs uppercase tracking-wider"
+                    >
+                        🔒 Reservar Ahora ($500 USD / $2M COP)
+                    </button>
+                    <button 
+                        type="button" 
+                        onclick="alert('¡Solicitud de Test Drive enviada! Un asesor te llamará en 15 minutos.');" 
+                        class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl transition text-xs"
+                    >
+                        📅 Agendar Test Drive a Domicilio
+                    </button>
+                </div>
+            </div>
+
+            <!-- Fast Contact Expert -->
+            <div class="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-brand-600 flex items-center justify-center font-bold text-base">
+                        👨‍🔧
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-xs">Asesor Especialista Asignado</h4>
+                        <span class="text-[11px] text-emerald-400">● En línea para responder dudas</span>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-300">¿Quieres conocer detalles del peritaje o negociar tu auto en parte de pago?</p>
+                <a 
+                    href="https://api.whatsapp.com/send?text=Hola,%20estoy%20interesado%20en%20el%20<%= encodeURIComponent(vehicle.title) %>" 
+                    target="_blank" 
+                    class="block text-center py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition text-xs"
+                >
+                    💬 Hablar por WhatsApp
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TABS: 150-PT INSPECTION, LEGAL REPORT, SPECS & FINANCING CALCULATOR -->
+    <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-8">
+        
+        <!-- Section 1: Peritaje de 150 Puntos -->
+        <div>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2 mb-6">
+                <div>
+                    <span class="text-emerald-700 font-bold text-xs uppercase tracking-wider">Peritaje Técnico Profesional</span>
+                    <h2 class="font-display font-black text-2xl text-slate-900">Inspección Certificada de 150 Puntos</h2>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-2xl flex items-center gap-2">
+                    <span class="text-emerald-700 font-extrabold text-lg"><%= vehicle.inspection_score %> / 10</span>
+                    <span class="text-xs text-emerald-800 font-semibold">Estado Sobresaliente</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
+                    <span class="text-xs text-slate-500 font-bold block mb-1">Motor & Turbo</span>
+                    <span class="text-xl font-black text-emerald-600"><%= vehicle.inspection_details.engine %>%</span>
+                    <span class="text-[10px] text-slate-400 block mt-1">Compresión y estanqueidad óptimas</span>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
+                    <span class="text-xs text-slate-500 font-bold block mb-1">Transmisión</span>
+                    <span class="text-xl font-black text-emerald-600"><%= vehicle.inspection_details.transmission %>%</span>
+                    <span class="text-[10px] text-slate-400 block mt-1">Cambios fluidos sin tirones</span>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
+                    <span class="text-xs text-slate-500 font-bold block mb-1">Frenos & Suspensión</span>
+                    <span class="text-xl font-black text-emerald-600"><%= vehicle.inspection_details.brakes_suspension %>%</span>
+                    <span class="text-[10px] text-slate-400 block mt-1">Discos y amortiguadores al 90%+</span>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
+                    <span class="text-xs text-slate-500 font-bold block mb-1">Chasis & Pintura</span>
+                    <span class="text-xl font-black text-emerald-600"><%= vehicle.inspection_details.chassis_body %>%</span>
+                    <span class="text-[10px] text-slate-400 block mt-1">Estructura original sin golpes</span>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center col-span-2 sm:col-span-1">
+                    <span class="text-xs text-slate-500 font-bold block mb-1">Electrónica & ADAS</span>
+                    <span class="text-xl font-black text-emerald-600"><%= vehicle.inspection_details.electronics_interior %>%</span>
+                    <span class="text-[10px] text-slate-400 block mt-1">Escáner OBD-II 100% limpio</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Historial Legal & Documental -->
+        <div class="pt-6 border-t border-slate-100">
+            <h3 class="font-display font-black text-xl text-slate-900 mb-4">Reporte Legal & Documental</h3>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <span class="text-slate-400 font-bold block mb-1">Historial de Propietarios</span>
+                    <span class="text-slate-900 font-black text-sm">
+                        <%= vehicle.legal_report.single_owner ? '1 Único Propietario' : `${vehicle.legal_report.owners_count} Propietarios` %>
+                    </span>
+                    <span class="text-[10px] text-emerald-600 font-semibold block mt-1">✓ Historial certificado</span>
+                </div>
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <span class="text-slate-400 font-bold block mb-1">Historial de Siniestros</span>
+                    <span class="text-slate-900 font-black text-sm">0 Accidentes Reportados</span>
+                    <span class="text-[10px] text-emerald-600 font-semibold block mt-1">✓ Sin reclamaciones aseguradora</span>
+                </div>
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <span class="text-slate-400 font-bold block mb-1">Seguro SOAT & RTM</span>
+                    <span class="text-slate-900 font-black text-sm"><%= vehicle.legal_report.soat_status %></span>
+                    <span class="text-[10px] text-slate-500 font-semibold block mt-1"><%= vehicle.legal_report.rtm_status %></span>
+                </div>
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <span class="text-slate-400 font-bold block mb-1">Situación Jurídica</span>
+                    <span class="text-slate-900 font-black text-sm">Libre de Gravámenes</span>
+                    <span class="text-[10px] text-emerald-600 font-semibold block mt-1">✓ Listo para traspaso en 24h</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Especificaciones Técnicas & Equipamiento -->
+        <div class="pt-6 border-t border-slate-100">
+            <h3 class="font-display font-black text-xl text-slate-900 mb-4">Especificaciones Técnicas</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-3 text-xs">
+                    <div class="flex justify-between py-2 border-b border-slate-100">
+                        <span class="text-slate-500 font-bold">Motorización</span>
+                        <span class="font-black text-slate-900"><%= vehicle.engine %></span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-slate-100">
+                        <span class="text-slate-500 font-bold">Potencia Máxima</span>
+                        <span class="font-black text-slate-900"><%= vehicle.horsepower %> HP</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-slate-100">
+                        <span class="text-slate-500 font-bold">Torque</span>
+                        <span class="font-black text-slate-900"><%= vehicle.torque %></span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-slate-100">
+                        <span class="text-slate-500 font-bold">Aceleración</span>
+                        <span class="font-black text-slate-900"><%= vehicle.acceleration %></span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-slate-100">
+                        <span class="text-slate-500 font-bold">Tracción</span>
+                        <span class="font-black text-slate-900"><%= vehicle.drivetrain %></span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">Equipamiento & Confort Destacado</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <% vehicle.features.forEach(feat => { %>
+                            <div class="flex items-center gap-2 p-2 rounded-xl bg-slate-50 text-xs font-semibold text-slate-700">
+                                <span class="text-brand-600 font-bold">✓</span>
+                                <span><%= feat %></span>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Calculadora de Financiamiento en Vivo -->
+        <div class="pt-6 border-t border-slate-100 bg-slate-900 text-white p-6 sm:p-8 rounded-3xl" id="calcCredito">
+            <div class="max-w-3xl">
+                <span class="text-amber-400 font-extrabold text-xs uppercase tracking-wider">Simulador de Crédito</span>
+                <h3 class="font-display font-black text-2xl mt-1">Calcula tu Cuota Mensual Estimada</h3>
+                <p class="text-xs text-slate-400 mt-1">Aprobación en 2 horas con bancos aliados sin trámites presenciales.</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Cuota Inicial (30%)</label>
+                        <input 
+                            type="range" 
+                            id="downPaymentRange" 
+                            min="20" 
+                            max="60" 
+                            value="30" 
+                            step="5" 
+                            oninput="updateFinanceCalc(<%= vehicle.price_usd %>, <%= vehicle.price_cop %>)" 
+                            class="w-full accent-brand-500"
+                        >
+                        <span class="text-xs text-brand-300 font-bold block mt-1" id="downPaymentLabel">30% ($<%= (vehicle.price_usd * 0.3).toLocaleString() %> USD)</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Plazo en Meses</label>
+                        <select 
+                            id="loanTerm" 
+                            onchange="updateFinanceCalc(<%= vehicle.price_usd %>, <%= vehicle.price_cop %>)" 
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none"
+                        >
+                            <option value="24">24 Meses (2 Años)</option>
+                            <option value="36">36 Meses (3 Años)</option>
+                            <option value="48" selected>48 Meses (4 Años)</option>
+                            <option value="60">60 Meses (5 Años)</option>
+                        </select>
+                    </div>
+
+                    <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 flex flex-col justify-center">
+                        <span class="text-[11px] text-slate-400 font-bold block">Cuota Mensual Estimada</span>
+                        <span class="text-2xl font-black text-emerald-400" id="monthlyQuotaUSD">$1,280 USD/mes</span>
+                        <span class="text-[11px] text-slate-400 block" id="monthlyQuotaCOP">~$5.050.000 COP/mes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- RESERVATION & PURCHASE MODAL -->
+<div id="reservationModal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 relative my-8 overflow-hidden max-h-[92vh] flex flex-col">
+        
+        <!-- Modal Header -->
+        <div class="p-5 sm:p-6 bg-gradient-to-r from-slate-900 via-slate-800 to-brand-950 text-white relative shrink-0">
+            <button type="button" onclick="document.getElementById('reservationModal').classList.add('hidden')" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm transition">✕</button>
+            
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-brand-500/20 border border-brand-400/30 text-brand-300 flex items-center justify-center font-bold text-2xl shrink-0">
+                    🔒
+                </div>
+                <div>
+                    <span class="bg-brand-500/20 text-brand-300 font-bold text-[10px] uppercase px-2 py-0.5 rounded-md border border-brand-400/20">
+                        Apartado Seguro de Inventario
+                    </span>
+                    <h3 class="font-display font-black text-lg sm:text-xl text-white mt-0.5"><%= vehicle.title %> (<%= vehicle.year %>)</h3>
+                    <p class="text-xs text-slate-300">Garantía de retención exclusiva por 72 horas • Depósito: <strong class="text-emerald-400">$500 USD / $2.000.000 COP</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Body (Scrollable) -->
+        <form action="/vehiculos/reservar" method="POST" id="vehiclePurchaseForm" class="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+            <input type="hidden" name="vehicle_id" value="<%= vehicle.id %>">
+            
+            <!-- STEP 1: CUSTOMER CONTACT -->
+            <div>
+                <h4 class="text-xs font-black text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <span class="w-5 h-5 rounded-full bg-brand-600 text-white text-[10px] flex items-center justify-center font-bold">1</span>
+                    Datos del Titular de la Reserva
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Nombre Completo *</label>
+                        <input type="text" name="customer_name" required placeholder="Ej: Carlos Andrés Gómez" value="Carlos Gómez" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Email de Notificación *</label>
+                        <input type="email" name="customer_email" required placeholder="correo@ejemplo.com" value="carlos.gomez@ejemplo.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Teléfono / WhatsApp *</label>
+                        <input type="tel" name="customer_phone" required placeholder="+57 300 123 4567" value="+57 310 987 6543" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Ciudad de Entrega</label>
+                        <input type="text" name="customer_city" value="<%= vehicle.city %>" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: SELECT PAYMENT METHOD -->
+            <div class="pt-2 border-t border-slate-100">
+                <h4 class="text-xs font-black text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <span class="w-5 h-5 rounded-full bg-brand-600 text-white text-[10px] flex items-center justify-center font-bold">2</span>
+                    Selecciona tu Método de Pago o Banco
+                </h4>
+
+                <!-- Payment Method Selector Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-4">
+                    
+                    <!-- Option PSE -->
+                    <label class="payment-method-card border-2 border-brand-500 bg-brand-50/60 rounded-2xl p-3 cursor-pointer transition flex flex-col items-center text-center gap-1.5 hover:border-brand-600">
+                        <input type="radio" name="payment_method" value="pse" checked onchange="switchPaymentMethod('pse')" class="sr-only">
+                        <span class="text-xl">🏛️</span>
+                        <span class="text-xs font-black text-slate-900 block leading-tight">PSE Bancos</span>
+                        <span class="text-[10px] text-slate-500 font-medium leading-tight">Débito en Línea</span>
+                    </label>
+
+                    <!-- Option Transferencia Bancaria -->
+                    <label class="payment-method-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-3 cursor-pointer transition flex flex-col items-center text-center gap-1.5">
+                        <input type="radio" name="payment_method" value="transfer" onchange="switchPaymentMethod('transfer')" class="sr-only">
+                        <span class="text-xl">📑</span>
+                        <span class="text-xs font-black text-slate-900 block leading-tight">Transferencia / QR</span>
+                        <span class="text-[10px] text-slate-500 font-medium leading-tight">Bancolombia, etc.</span>
+                    </label>
+
+                    <!-- Option Billeteras (Nequi/Daviplata) -->
+                    <label class="payment-method-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-3 cursor-pointer transition flex flex-col items-center text-center gap-1.5">
+                        <input type="radio" name="payment_method" value="wallet" onchange="switchPaymentMethod('wallet')" class="sr-only">
+                        <span class="text-xl">📱</span>
+                        <span class="text-xs font-black text-slate-900 block leading-tight">Nequi / Daviplata</span>
+                        <span class="text-[10px] text-slate-500 font-medium leading-tight">Push Instantáneo</span>
+                    </label>
+
+                    <!-- Option Tarjeta de Crédito -->
+                    <label class="payment-method-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-3 cursor-pointer transition flex flex-col items-center text-center gap-1.5">
+                        <input type="radio" name="payment_method" value="card" onchange="switchPaymentMethod('card')" class="sr-only">
+                        <span class="text-xl">💳</span>
+                        <span class="text-xs font-black text-slate-900 block leading-tight">Tarjeta Crédito</span>
+                        <span class="text-[10px] text-slate-500 font-medium leading-tight">Hasta 36 Cuotas</span>
+                    </label>
+
+                    <!-- Option Crédito Vehicular -->
+                    <label class="payment-method-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-3 cursor-pointer transition flex flex-col items-center text-center gap-1.5">
+                        <input type="radio" name="payment_method" value="credit" onchange="switchPaymentMethod('credit')" class="sr-only">
+                        <span class="text-xl">🤝</span>
+                        <span class="text-xs font-black text-slate-900 block leading-tight">Crédito Auto</span>
+                        <span class="text-[10px] text-slate-500 font-medium leading-tight">Sufi / Bancos</span>
+                    </label>
+
+                    <!-- Option PayPal / USD -->
+                    <label class="payment-method-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-3 cursor-pointer transition flex flex-col items-center text-center gap-1.5">
+                        <input type="radio" name="payment_method" value="paypal" onchange="switchPaymentMethod('paypal')" class="sr-only">
+                        <span class="text-xl">🌐</span>
+                        <span class="text-xs font-black text-slate-900 block leading-tight">PayPal / USD</span>
+                        <span class="text-[10px] text-slate-500 font-medium leading-tight">Pago Internacional</span>
+                    </label>
+
+                </div>
+
+                <!-- DYNAMIC BANKING & METHOD SPECIFIC FIELDS CONTAINER -->
+                
+                <!-- 1. PSE FIELDS -->
+                <div id="method-pse" class="payment-fields-box bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-3.5 animate-fadeIn">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">🏛️</span>
+                            <span class="font-black text-xs text-slate-800">Pagos Seguros en Línea (PSE)</span>
+                        </div>
+                        <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">ACH Colombia Oficial</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Banco -->
+                        <div class="sm:col-span-2">
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Selecciona tu Banco o Entidad Financiera *</label>
+                            <select name="pse_bank" id="pseBankSelect" onchange="updatePseBankInfo(this.value)" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="Bancolombia" selected>Bancolombia (Personas y Empresas)</option>
+                                <option value="Banco de Bogotá">Banco de Bogotá</option>
+                                <option value="Davivienda">Davivienda</option>
+                                <option value="BBVA Colombia">BBVA Colombia</option>
+                                <option value="Banco de Occidente">Banco de Occidente</option>
+                                <option value="Banco Popular">Banco Popular</option>
+                                <option value="Banco AV Villas">Banco AV Villas</option>
+                                <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
+                                <option value="Banco Caja Social">Banco Caja Social</option>
+                                <option value="Banco Itaú Colombia">Banco Itaú Colombia</option>
+                                <option value="Banco Agrario de Colombia">Banco Agrario de Colombia</option>
+                                <option value="Banco Santander Colombia">Banco Santander</option>
+                                <option value="Lulo Bank">Lulo Bank</option>
+                                <option value="Nu Colombia (Nubank)">Nu Colombia (Nubank)</option>
+                                <option value="Dale!">Dale!</option>
+                                <option value="Nequi">Nequi (vía PSE)</option>
+                                <option value="Daviplata">Daviplata (vía PSE)</option>
+                                <option value="RappiPay">RappiPay / Compañía de Financiamiento</option>
+                                <option value="Financiera Juriscoop">Financiera Juriscoop / Cooperativas</option>
+                            </select>
+                        </div>
+
+                        <!-- Tipo de Persona -->
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Tipo de Persona *</label>
+                            <select name="pse_person_type" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="Persona Natural">Persona Natural</option>
+                                <option value="Persona Jurídica">Persona Jurídica (Empresarial)</option>
+                            </select>
+                        </div>
+
+                        <!-- Tipo Documento -->
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Tipo de Documento *</label>
+                            <select name="pse_doc_type" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="CC">Cédula de Ciudadanía (CC)</option>
+                                <option value="CE">Cédula de Extranjería (CE)</option>
+                                <option value="NIT">NIT (Empresas)</option>
+                                <option value="PAS">Pasaporte (PAS)</option>
+                                <option value="PPT">Permiso por Protección Temporal (PPT)</option>
+                            </select>
+                        </div>
+
+                        <!-- Num Documento -->
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Número de Documento *</label>
+                            <input type="text" name="pse_doc_number" placeholder="Ej: 1098765432" value="1098765432" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+
+                        <!-- Email PSE -->
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Email Registrado en PSE *</label>
+                            <input type="email" name="pse_email" placeholder="correo@banco.com" value="carlos.gomez@ejemplo.com" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Bank specific guidance banner -->
+                    <div id="pseBankGuidance" class="p-3 bg-blue-50/80 rounded-xl border border-blue-200/80 text-[11px] text-blue-900 flex items-start gap-2">
+                        <span class="text-sm shrink-0">ℹ️</span>
+                        <div>
+                            <strong id="pseBankNameTitle">Bancolombia:</strong> 
+                            <span id="pseBankInstruction">Ten a la mano tu Clave Dinámica o App Móvil Bancolombia para autorizar la transacción de $2.000.000 COP con débito seguro en línea.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. TRANSFERENCIA / QR DIRECTO -->
+                <div id="method-transfer" class="payment-fields-box bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-3.5 hidden animate-fadeIn">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">📑</span>
+                            <span class="font-black text-xs text-slate-800">Transferencia Bancaria Directa / Llave QR</span>
+                        </div>
+                        <span class="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">Sin Comisiones</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Selecciona la Cuenta Receptora Oficial de AutoHub *</label>
+                        <select name="transfer_target_bank" id="targetAccountSelect" onchange="updateTargetAccountBox(this.value)" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <option value="Bancolombia (Cta Corriente #048-928192-11)">Bancolombia • Cta Corriente # 048-928192-11</option>
+                            <option value="Banco de Bogotá (Cta Ahorros #184-930129-84)">Banco de Bogotá • Cta Ahorros # 184-930129-84</option>
+                            <option value="Davivienda (Cta Corriente #009-482019-22)">Davivienda • Cta Corriente # 009-482019-22</option>
+                            <option value="BBVA Colombia (Cta Ahorros #018-382910-55)">BBVA Colombia • Cta Ahorros # 018-382910-55</option>
+                        </select>
+                    </div>
+
+                    <!-- Verified Account Card -->
+                    <div class="p-3.5 bg-emerald-950 text-white rounded-xl border border-emerald-800 space-y-1.5 text-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Cuenta Verificada AutoHub Motors Colombia S.A.S.</span>
+                            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded">NIT: 901.482.109-3</span>
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
+                            <div>
+                                <span class="text-[10px] text-slate-400 block">Número de Cuenta:</span>
+                                <span class="font-mono font-black text-sm text-emerald-200" id="targetAccNumber">048-928192-11</span>
+                            </div>
+                            <button type="button" onclick="copyAccountNumber()" class="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white font-bold rounded-lg text-[10px] transition">
+                                📋 Copiar Número
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Customer Transfer Details Form -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Banco Emisor desde donde transfieres *</label>
+                            <input type="text" name="transfer_origin_bank" placeholder="Ej: Bancolombia, Davivienda, Nu..." value="Bancolombia" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Número de Aprobación / Comprobante *</label>
+                            <input type="text" name="transfer_ref_number" placeholder="Ej: 94821039" value="TRF-8849201" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Nombre del Titular de Cuenta Origen</label>
+                            <input type="text" name="transfer_holder_name" placeholder="Nombre completo" value="Carlos Gómez" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Fecha de la Transferencia</label>
+                            <input type="date" name="transfer_date" value="<%= new Date().toISOString().substring(0, 10) %>" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. BILLETERAS DIGITALES (NEQUI / DAVIPLATA) -->
+                <div id="method-wallet" class="payment-fields-box bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-3.5 hidden animate-fadeIn">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">📱</span>
+                            <span class="font-black text-xs text-slate-800">Billeteras Móviles Directas</span>
+                        </div>
+                        <span class="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">Notificación en tu App</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="sm:col-span-2">
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Selecciona la Billetera Digital *</label>
+                            <select name="wallet_provider" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="Nequi" selected>Nequi (Bancolombia)</option>
+                                <option value="Daviplata">Daviplata (Davivienda)</option>
+                                <option value="Dale!">Dale! (Grupo Aval)</option>
+                                <option value="Movii">Movii</option>
+                                <option value="Transfiya">Transfiya Interoperable</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Número de Celular de la Billetera *</label>
+                            <input type="tel" name="wallet_phone" placeholder="Ej: 3109876543" value="3109876543" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Cédula del Titular *</label>
+                            <input type="text" name="wallet_doc_number" placeholder="Ej: 1098765432" value="1098765432" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-purple-50 rounded-xl border border-purple-200 text-[11px] text-purple-900">
+                        🔔 <strong>Notificación Automática:</strong> Al confirmar, recibirás una solicitud de pago por $2.000.000 COP en tu aplicación de Nequi/Daviplata. Acepta con tu biometría o clave para validar el apartado.
+                    </div>
+                </div>
+
+                <!-- 4. TARJETA DE CRÉDITO / DÉBITO -->
+                <div id="method-card" class="payment-fields-box bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-3.5 hidden animate-fadeIn">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">💳</span>
+                            <span class="font-black text-xs text-slate-800">Tarjeta de Crédito o Débito Internacional</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-[11px] font-bold" id="cardBrandBadge">
+                            <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Visa / MC / Amex</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="sm:col-span-2">
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Número de Tarjeta *</label>
+                            <div class="relative">
+                                <input type="text" name="card_number" id="cardNumInput" oninput="detectCardBrand(this.value)" placeholder="4532 8921 0492 8821" value="4532 8921 0492 8821" maxlength="19" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-mono font-bold tracking-wider focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <span class="absolute right-3 top-2.5 text-sm" id="cardIconPreview">💳</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Nombre Impreso en la Tarjeta *</label>
+                            <input type="text" name="card_holder" placeholder="Ej: CARLOS GOMEZ" value="CARLOS GOMEZ" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold uppercase focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Vencimiento (MM/AA) *</label>
+                                <input type="text" name="card_exp" placeholder="12/28" value="08/28" maxlength="5" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-center focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">CVV / CVC *</label>
+                                <input type="password" name="card_cvv" placeholder="•••" value="892" maxlength="4" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-center focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Número de Cuotas</label>
+                            <select name="card_installments" id="cardInstallmentsSelect" onchange="updateInstallmentSim(this.value)" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="1">1 Cuota (Sin intereses - $2.000.000 COP)</option>
+                                <option value="3">3 Cuotas (~ $666.666 COP / mes)</option>
+                                <option value="6">6 Cuotas (~ $333.333 COP / mes)</option>
+                                <option value="12">12 Cuotas (~ $166.666 COP / mes)</option>
+                                <option value="24">24 Cuotas (~ $83.333 COP / mes)</option>
+                                <option value="36">36 Cuotas (~ $55.555 COP / mes)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Cédula del Titular de Tarjeta</label>
+                            <input type="text" name="card_doc_number" placeholder="Ej: 1098765432" value="1098765432" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. CRÉDITO VEHICULAR / FINANCIAMIENTO AUTOMOTRIZ -->
+                <div id="method-credit" class="payment-fields-box bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-3.5 hidden animate-fadeIn">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">🤝</span>
+                            <span class="font-black text-xs text-slate-800">Solicitud de Crédito Vehicular con Bancos Aliados</span>
+                        </div>
+                        <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Respuesta en 15 Min</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Entidad Financiera Preferida *</label>
+                            <select name="credit_entity" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="Sufi (Grupo Bancolombia)">Sufi (Grupo Bancolombia) - Tasa Preferencial</option>
+                                <option value="Banco de Bogotá Vehicular">Banco de Bogotá Vehicular</option>
+                                <option value="Davivienda Crédito Auto">Davivienda Crédito Auto</option>
+                                <option value="Santander Consumer">Santander Consumer Finance</option>
+                                <option value="BBVA AutoFlex">BBVA AutoFlex</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Plazo de Financiación</label>
+                            <select name="credit_term_months" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="12">12 Meses (1 año)</option>
+                                <option value="24">24 Meses (2 años)</option>
+                                <option value="36">36 Meses (3 años)</option>
+                                <option value="48" selected>48 Meses (4 años)</option>
+                                <option value="60">60 Meses (5 años)</option>
+                                <option value="72">72 Meses (6 años)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Tipo de Actividad Laboral *</label>
+                            <select name="credit_employment_type" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="Empleado a Término Indefinido">Empleado a Término Indefinido</option>
+                                <option value="Prestador de Servicios / Fijo">Empleado a Término Fijo / OPS</option>
+                                <option value="Independiente con RUT">Independiente con RUT / Comercio</option>
+                                <option value="Pensionado">Pensionado</option>
+                                <option value="Dueño de Empresa / Accionista">Dueño de Empresa / Persona Jurídica</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Ingresos Mensuales Demostrables ($ COP) *</label>
+                            <input type="number" name="credit_income" value="5500000" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <label class="flex items-start gap-2 text-[11px] text-slate-600 cursor-pointer pt-1">
+                        <input type="checkbox" checked required class="mt-0.5 rounded text-brand-600 focus:ring-brand-500">
+                        <span>Autorizo a AutoHub S.A.S. y a la entidad financiera elegida para consultar y validar mi historial en centrales de riesgo (TransUnion / Datacrédito).</span>
+                    </label>
+                </div>
+
+                <!-- 6. PAYPAL -->
+                <div id="method-paypal" class="payment-fields-box bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-3.5 hidden animate-fadeIn">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">🌐</span>
+                            <span class="font-black text-xs text-slate-800">PayPal Express Checkout Internacional</span>
+                        </div>
+                        <span class="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">$500.00 USD</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Email de tu Cuenta PayPal *</label>
+                            <input type="email" name="paypal_email" placeholder="comprador@paypal.com" value="carlos.gomez@ejemplo.com" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">País de Facturación</label>
+                            <select name="paypal_country" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="Colombia (CO)">Colombia (CO)</option>
+                                <option value="Estados Unidos (USA)">Estados Unidos (USA)</option>
+                                <option value="México (MX)">México (MX)</option>
+                                <option value="España (ES)">España (ES)</option>
+                                <option value="Otro">Otro País</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Notes & Guarantees -->
+            <div class="p-3.5 bg-amber-50/80 rounded-2xl border border-amber-200/80 text-[11px] text-amber-900 flex items-start gap-2.5">
+                <span class="text-base shrink-0">🛡️</span>
+                <div>
+                    <strong>Garantía de Satisfacción 100% Reembolsable:</strong> Si después de inspeccionar y probar el vehículo en tu domicilio decides no concretar la compra, tu depósito de $2.000.000 COP te será devuelto íntegramente de inmediato.
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="pt-2 flex items-center justify-end gap-3 sticky bottom-0 bg-white py-2 border-t border-slate-100">
+                <button type="button" onclick="document.getElementById('reservationModal').classList.add('hidden')" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
+                    Cerrar
+                </button>
+                <button type="submit" class="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-black transition shadow-lg shadow-brand-600/30 flex items-center gap-2">
+                    <span>🔒</span> Confirmar Depósito de Reserva
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Interactive Scripts for Dynamic Payment Methods & Banks -->
+<script>
+    function switchPaymentMethod(methodKey) {
+        // Hide all method field boxes
+        const boxes = document.querySelectorAll('.payment-fields-box');
+        boxes.forEach(b => b.classList.add('hidden'));
+
+        // Show target box
+        const target = document.getElementById('method-' + methodKey);
+        if (target) {
+            target.classList.remove('hidden');
+        }
+
+        // Update active styling on cards
+        const cards = document.querySelectorAll('.payment-method-card');
+        cards.forEach(c => {
+            const input = c.querySelector('input[type="radio"]');
+            if (input && input.value === methodKey) {
+                input.checked = true;
+                c.classList.add('border-brand-500', 'bg-brand-50/60');
+                c.classList.remove('border-slate-200');
+            } else {
+                c.classList.remove('border-brand-500', 'bg-brand-50/60');
+                c.classList.add('border-slate-200');
+            }
+        });
+    }
+
+    function updatePseBankInfo(bankName) {
+        const titleEl = document.getElementById('pseBankNameTitle');
+        const instEl = document.getElementById('pseBankInstruction');
+        if (!titleEl || !instEl) return;
+
+        titleEl.textContent = bankName + ':';
+
+        const bankInstructions = {
+            'Bancolombia': 'Ten a la mano tu Clave Dinámica o App Móvil Bancolombia para autorizar la transacción de $2.000.000 COP con débito seguro.',
+            'Banco de Bogotá': 'Ingresa con tu clave segura del portal web o genera tu Token Digital en la App Móvil de Banco de Bogotá.',
+            'Davivienda': 'Ten listo tu número de identificación y tu clave virtual de Davivienda para autorizar en el portal seguro.',
+            'BBVA Colombia': 'Valida tu ingreso con Token BBVA o biometría facial desde la aplicación BBVA Móvil.',
+            'Banco de Occidente': 'Se solicitará tu clave de Banca Móvil y el código OTP enviado a tu número celular registrado.',
+            'Banco Popular': 'Accede con tu usuario y contraseña de Zona Transaccional del Banco Popular.',
+            'Banco AV Villas': 'Ingresa con tu contraseña de Banca Virtual y Clave de Audio/Token AV Villas.',
+            'Scotiabank Colpatria': 'Verifica la operación mediante el código de seguridad o Token de la App Scotiabank Colpatria.',
+            'Banco Caja Social': 'Ingresa con tu usuario amigo y clave de internet de Banco Caja Social.',
+            'Banco Itaú Colombia': 'Autoriza con tu clave de internet y el código dinámico Itaú.',
+            'Banco Agrario de Colombia': 'Usa tu usuario de Banca Virtual del Banco Agrario de Colombia.',
+            'Lulo Bank': 'Recibirás una notificación en tu App de Lulo Bank para aprobar el débito.',
+            'Nu Colombia (Nubank)': 'Se generará la orden de débito directo Nu con confirmación en la app de Nu.',
+            'Dale!': 'Ingresa con tu celular y clave de Dale! para débito en línea.',
+            'Nequi': 'Usa tu número celular Nequi y confirma la notificación push de pago.',
+            'Daviplata': 'Ingresa tu número de celular y confirma el código SMS de Daviplata.',
+            'RappiPay': 'Autoriza desde tu cuenta RappiPay con tu PIN de 4 dígitos.'
+        };
+
+        instEl.textContent = bankInstructions[bankName] || 'Serás dirigido a la plataforma segura de ' + bankName + ' con cifrado bancario ACH de 256 bits.';
+    }
+
+    function updateTargetAccountBox(accountString) {
+        const numEl = document.getElementById('targetAccNumber');
+        if (!numEl) return;
+        if (accountString.includes('Bancolombia')) {
+            numEl.textContent = '048-928192-11';
+        } else if (accountString.includes('Bogotá')) {
+            numEl.textContent = '184-930129-84';
+        } else if (accountString.includes('Davivienda')) {
+            numEl.textContent = '009-482019-22';
+        } else if (accountString.includes('BBVA')) {
+            numEl.textContent = '018-382910-55';
+        }
+    }
+
+    function copyAccountNumber() {
+        const numEl = document.getElementById('targetAccNumber');
+        if (numEl) {
+            navigator.clipboard.writeText(numEl.textContent.trim());
+            alert('✓ Número de cuenta copiado al portapapeles: ' + numEl.textContent.trim());
+        }
+    }
+
+    function detectCardBrand(val) {
+        const clean = val.replace(/\D/g, '');
+        const badge = document.getElementById('cardBrandBadge');
+        const icon = document.getElementById('cardIconPreview');
+        if (!badge || !icon) return;
+
+        if (clean.startsWith('4')) {
+            badge.innerHTML = '<span class="bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-black">VISA</span>';
+            icon.textContent = '💳';
+        } else if (clean.startsWith('5')) {
+            badge.innerHTML = '<span class="bg-orange-600 text-white px-2 py-0.5 rounded text-[10px] font-black">MasterCard</span>';
+            icon.textContent = '💳';
+        } else if (clean.startsWith('34') || clean.startsWith('37')) {
+            badge.innerHTML = '<span class="bg-sky-700 text-white px-2 py-0.5 rounded text-[10px] font-black">American Express</span>';
+            icon.textContent = '💳';
+        } else if (clean.startsWith('6')) {
+            badge.innerHTML = '<span class="bg-amber-600 text-white px-2 py-0.5 rounded text-[10px] font-black">Discover / Diners</span>';
+            icon.textContent = '💳';
+        } else {
+            badge.innerHTML = '<span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold">Tarjeta Débito/Crédito</span>';
+            icon.textContent = '💳';
+        }
+    }
+</script>
+
+<!-- 360 Degree Viewer Script -->
+<script>
+    const images360 = <%- JSON.stringify(vehicle.gallery_360) %>;
+    let current360Index = 0;
+    let autoRotateInterval = null;
+
+    function render360() {
+        const img = document.getElementById('img360');
+        const label = document.getElementById('angleLabel');
+        if (img && images360.length > 0) {
+            img.src = images360[current360Index];
+            const angle = Math.round((current360Index / images360.length) * 360);
+            label.textContent = `Ángulo: ${angle}° (${current360Index + 1}/${images360.length})`;
+        }
+    }
+
+    function next360Angle() {
+        current360Index = (current360Index + 1) % images360.length;
+        render360();
+    }
+
+    function prev360Angle() {
+        current360Index = (current360Index - 1 + images360.length) % images360.length;
+        render360();
+    }
+
+    function toggleAutoRotate() {
+        const btn = document.getElementById('autoRotateBtn');
+        if (autoRotateInterval) {
+            clearInterval(autoRotateInterval);
+            autoRotateInterval = null;
+            btn.innerHTML = '<span>▶</span> Auto-Rotar 360°';
+            btn.className = 'px-3.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-xs font-black text-white transition flex items-center gap-1';
+        } else {
+            autoRotateInterval = setInterval(next360Angle, 300);
+            btn.innerHTML = '<span>⏸</span> Pausar Giro';
+            btn.className = 'px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-xs font-black text-white transition flex items-center gap-1';
+        }
+    }
+
+    function changeMainImg(src) {
+        const img = document.getElementById('img360');
+        if (img) img.src = src;
+    }
+
+    function openVehicleReservationModal() {
+        if (!window.IS_USER_LOGGED_IN) {
+            showAuthRequiredModal(window.location.pathname, 'Para reservar o comprar este vehículo certificado debes registrarte si no estás registrado o iniciar sesión si ya tienes cuenta en AutoHub.');
+            return;
+        }
+        document.getElementById('reservationModal').classList.remove('hidden');
+    }
+
+    // Drag-to-rotate interaction on 360 viewer
+    let isDragging = false;
+    let startX = 0;
+
+    const viewer = document.getElementById('viewer360');
+    if (viewer) {
+        viewer.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX;
+        });
+
+        window.addEventListener('mouseup', () => { isDragging = false; });
+
+        viewer.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const diff = e.clientX - startX;
+            if (Math.abs(diff) > 30) {
+                if (diff > 0) prev360Angle();
+                else next360Angle();
+                startX = e.clientX;
+            }
+        });
+    }
+
+    function updateFinanceCalc(priceUSD, priceCOP) {
+        const downPercent = Number(document.getElementById('downPaymentRange').value);
+        const term = Number(document.getElementById('loanTerm').value);
+
+        const downUSD = Math.round(priceUSD * (downPercent / 100));
+        document.getElementById('downPaymentLabel').textContent = `${downPercent}% ($${downUSD.toLocaleString()} USD)`;
+
+        const loanAmountUSD = priceUSD - downUSD;
+        const annualRate = 0.12; // 12% annual
+        const monthlyRate = annualRate / 12;
+        const monthlyPaymentUSD = Math.round((loanAmountUSD * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -term)));
+        const monthlyPaymentCOP = Math.round(monthlyPaymentUSD * 3950);
+
+        document.getElementById('monthlyQuotaUSD').textContent = `$${monthlyPaymentUSD.toLocaleString()} USD/mes`;
+        document.getElementById('monthlyQuotaCOP').textContent = `~$${monthlyPaymentCOP.toLocaleString('es-CO')} COP/mes`;
+    }
+
+    // Initial calc
+    document.addEventListener('DOMContentLoaded', () => {
+        updateFinanceCalc(<%= vehicle.price_usd %>, <%= vehicle.price_cop %>);
+    });
+</script>
+
+<%- include('footer') %>

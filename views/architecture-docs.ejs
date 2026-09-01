@@ -1,0 +1,385 @@
+<%- include('header') %>
+
+<div class="bg-slate-950 text-white py-14 border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">
+                    Documentación Técnica & Arquitectura Full Stack
+                </span>
+                <h1 class="font-display text-3xl sm:text-4xl font-black mt-2">
+                    Arquitectura de Software, Sitemap & Modelo de Datos
+                </h1>
+                <p class="text-slate-400 text-xs sm:text-sm mt-1 max-w-3xl">
+                    Especificación formal de la plataforma e-commerce automotriz bimodal: compraventa de vehículos certificados con peritaje e historial legal + venta de autopartes con compatibilidad por VIN.
+                </p>
+            </div>
+            <a href="/" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-black transition self-start md:self-auto">
+                &larr; Volver a la Tienda
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    
+    <!-- DOCS NAVIGATION TABS -->
+    <div class="flex items-center gap-2 border-b border-slate-200 pb-4 mb-8 overflow-x-auto">
+        <button onclick="switchDocTab('sitemap')" id="docTabBtnSitemap" class="px-4 py-2 rounded-xl text-xs font-black bg-slate-900 text-white transition whitespace-nowrap">
+            🗺️ 1. Estructura de Navegación (Sitemap)
+        </button>
+        <button onclick="switchDocTab('database')" id="docTabBtnDatabase" class="px-4 py-2 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition whitespace-nowrap">
+            🗄️ 2. Esquema de Base de Datos (PostgreSQL DDL)
+        </button>
+        <button onclick="switchDocTab('apis')" id="docTabBtnApis" class="px-4 py-2 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition whitespace-nowrap">
+            🔌 3. Especificación de APIs & Integraciones
+        </button>
+        <button onclick="switchDocTab('flows')" id="docTabBtnFlows" class="px-4 py-2 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition whitespace-nowrap">
+            🔄 4. Flujos UX Bimodales & Garaje Virtual
+        </button>
+    </div>
+
+    <!-- TAB 1: SITEMAP & ESTRUCTURA -->
+    <div id="docContentSitemap" class="space-y-8">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+            <div>
+                <h2 class="font-display font-black text-2xl text-slate-900">1. Estructura de Navegación Bimodal (Sitemap)</h2>
+                <p class="text-xs text-slate-500 mt-1">
+                    Cómo conviven los dos modelos de negocio (reserva asistida de alto ticket en autos vs compra transaccional rápida en repuestos) manteniendo una experiencia intuitiva.
+                </p>
+            </div>
+
+            <!-- Visual Flow Diagram -->
+            <div class="bg-slate-950 text-slate-200 p-6 rounded-2xl font-mono text-xs overflow-x-auto leading-relaxed border border-slate-800">
+<pre class="text-emerald-400">
+                                      [ PLATAFORMA ROOT (/) ]
+                                                 │
+          ┌──────────────────────────────────────┼──────────────────────────────────────┐
+          │                                      │                                      │
+ 🚗 [ LÍNEA VEHÍCULOS ]                 🛒 [ LÍNEA AUTOPARTES ]                  👤 [ USUARIO & GLOBAL ]
+          │                                      │                                      │
+  ├── /vehiculos                        ├── /autopartes                        ├── /mi-cuenta
+  │   ├── /catalogo (Filtros facetados) │   ├── /categorias (Árbol OEM/After)  │   ├── /perfil
+  │   │   └── /v/[slug-id] (Ficha)      │   │   └── /c/[categoria]/[subcat]    │   ├── /mis-vehiculos (Garaje)
+  │   │       ├── Galería 360°          │   └── /p/[sku-slug] (Ficha Pieza)    │   ├── /pedidos-autopartes
+  │   │       ├── Reporte Legal/Mecánico│       ├── Matriz Compatibilidad Fit  │   └── /solicitudes-vehiculos
+  │   │       ├── Calculadora Crédito   │       ├── Diagramas de Explosión     ├── /checkout (Repuestos)
+  │   │       └── Reserva ($) / Cita    │       └── Stock en Tiempo Real       ├── /comparador
+  │   ├── /vender (Tasador Interactivo) ├── /buscador-vin                      └── /centros-instalacion
+  │   │   ├── Paso 1: Datos Base/Placa  └── /garaje-virtual (Filtro por auto)
+  │   │   ├── Paso 2: Estado y Fotos
+  │   │   └── Paso 3: Oferta / Consig.
+  │   └── /financiamiento
+</pre>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                    <span class="font-black text-slate-900 text-sm block">1. Garaje Virtual Unificado</span>
+                    <p class="text-slate-600">
+                        El usuario guarda su auto en una cookie/sesión o perfil (`Toyota RAV4 2021`). Al ingresar a Autopartes, todo el inventario se filtra y marca automáticamente con distintivos de compatibilidad garantizada.
+                    </p>
+                </div>
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                    <span class="font-black text-slate-900 text-sm block">2. Ficha de Auto Asistida</span>
+                    <p class="text-slate-600">
+                        Los autos no van al carrito tradicional: ofrecen un depósito reembolsable de $500 USD para apartado por 72h o agendamiento directo de Test Drive a domicilio con simulación de crédito.
+                    </p>
+                </div>
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                    <span class="font-black text-slate-900 text-sm block">3. Carrito Ágil de Repuestos</span>
+                    <p class="text-slate-600">
+                        Cálculo de flete en tiempo real por peso volumétrico, despacho en 24 horas y opción adicional de "Enviar a taller aliado para instalación profesional".
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: BASE DE DATOS DDL -->
+    <div id="docContentDatabase" class="space-y-8 hidden">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+            <div>
+                <h2 class="font-display font-black text-2xl text-slate-900">2. Esquema Relacional PostgreSQL & JSONB</h2>
+                <p class="text-xs text-slate-500 mt-1">
+                    Modelo de datos normalizado con índices GIN para búsqueda full-text y tablas de compatibilidad cruzada (Fitments ACES/PIES estándar).
+                </p>
+            </div>
+
+            <!-- SQL DDL Viewer -->
+            <div class="bg-slate-950 text-slate-200 p-6 rounded-2xl font-mono text-xs overflow-x-auto leading-relaxed border border-slate-800 max-h-[600px] overflow-y-auto">
+<pre class="text-sky-300">
+-- ============================================================================
+-- 1. IDENTIDAD Y GARAJE VIRTUAL
+-- ============================================================================
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20),
+    role VARCHAR(20) DEFAULT 'customer' CHECK (role IN ('customer', 'dealer', 'admin', 'mechanic')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE user_garage_vehicles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    vin VARCHAR(17),
+    vehicle_year INT NOT NULL,
+    make VARCHAR(80) NOT NULL,
+    model VARCHAR(80) NOT NULL,
+    trim VARCHAR(80),
+    engine VARCHAR(100),
+    is_primary BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================================================
+-- 2. VEHÍCULOS CERTIFICADOS EN VENTA
+-- ============================================================================
+CREATE TYPE transmission_type AS ENUM ('manual', 'automatic', 'cvt', 'dual_clutch');
+CREATE TYPE fuel_type AS ENUM ('gasoline', 'diesel', 'electric', 'hybrid', 'plug_in_hybrid');
+CREATE TYPE vehicle_condition AS ENUM ('certified_cpo', 'guaranteed_used', 'new');
+
+CREATE TABLE vehicles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vin VARCHAR(17) UNIQUE NOT NULL,
+    plate_number VARCHAR(15),
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    make VARCHAR(80) NOT NULL,
+    model VARCHAR(80) NOT NULL,
+    vehicle_year INT NOT NULL,
+    condition vehicle_condition NOT NULL,
+    price_usd NUMERIC(12, 2) NOT NULL,
+    price_cop NUMERIC(14, 2) NOT NULL,
+    mileage_km INT NOT NULL,
+    fuel fuel_type NOT NULL,
+    transmission VARCHAR(80) NOT NULL,
+    drivetrain VARCHAR(40) NOT NULL, -- AWD, FWD, RWD, 4x4
+    engine VARCHAR(120) NOT NULL,
+    horsepower INT,
+    torque VARCHAR(60),
+    doors INT DEFAULT 4,
+    exterior_color VARCHAR(50),
+    interior_color VARCHAR(50),
+    city_location VARCHAR(100) NOT NULL,
+    status VARCHAR(20) DEFAULT 'available' CHECK (status IN ('available', 'reserved', 'sold', 'draft')),
+    
+    -- Peritaje & Reportes
+    mechanical_score NUMERIC(3, 1), -- Ej: 9.8 / 10
+    inspection_breakdown JSONB,     -- Motor: 100%, Transmisión: 99%, etc.
+    legal_report JSONB,             -- SOAT, RTM, Siniestros: 0, Propietarios: 1
+    gallery_360_urls JSONB,         -- Array de fotos para rotación 360°
+    gallery_images JSONB,           -- Fotos HD de exteriores e interiores
+    features_list JSONB,            -- Techo corredizo, ADAS, Apple CarPlay
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_vehicles_search ON vehicles(make, model, vehicle_year, price_usd, mileage_km, city_location);
+CREATE INDEX idx_vehicles_vin ON vehicles(vin);
+
+-- ============================================================================
+-- 3. CATÁLOGO DE AUTOPARTES Y MATRIZ DE COMPATIBILIDAD (ACES/PIES Standard)
+-- ============================================================================
+CREATE TABLE part_categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    slug VARCHAR(120) UNIQUE NOT NULL,
+    icon_svg VARCHAR(100)
+);
+
+CREATE TABLE parts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sku VARCHAR(60) UNIQUE NOT NULL,
+    oem_number VARCHAR(120),
+    name VARCHAR(200) NOT NULL,
+    brand VARCHAR(100) NOT NULL, -- Bosch, Brembo, KYB, etc.
+    category_id INT REFERENCES part_categories(id),
+    price_usd NUMERIC(10, 2) NOT NULL,
+    price_cop NUMERIC(12, 2) NOT NULL,
+    old_price_cop NUMERIC(12, 2),
+    stock_quantity INT DEFAULT 0,
+    rating NUMERIC(2, 1) DEFAULT 5.0,
+    reviews_count INT DEFAULT 0,
+    
+    -- Dimensiones y Peso para Cálculo Logístico
+    weight_kg NUMERIC(6, 3) NOT NULL,
+    dimensions_cm JSONB, -- { length, width, height }
+    
+    image_url VARCHAR(500),
+    description TEXT,
+    specifications JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE part_fitments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    part_id UUID REFERENCES parts(id) ON DELETE CASCADE,
+    make VARCHAR(80) NOT NULL,
+    model VARCHAR(80) NOT NULL,
+    years_range VARCHAR(50) NOT NULL, -- '2019 - 2024'
+    engine VARCHAR(100),              -- '2.5L Gasolina / Híbrido'
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_fitment_lookup ON part_fitments(make, model);
+CREATE INDEX idx_parts_sku ON parts(sku, oem_number);
+
+-- ============================================================================
+-- 4. TASACIONES (C2B VEHICLE APPRAISALS)
+-- ============================================================================
+CREATE TABLE vehicle_appraisals (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    plate VARCHAR(15) NOT NULL,
+    vin VARCHAR(17),
+    make VARCHAR(80) NOT NULL,
+    model VARCHAR(80) NOT NULL,
+    vehicle_year INT NOT NULL,
+    mileage_km INT NOT NULL,
+    condition VARCHAR(30) NOT NULL,
+    market_low_usd NUMERIC(12, 2),
+    market_high_usd NUMERIC(12, 2),
+    instant_offer_usd NUMERIC(12, 2),
+    contact_phone VARCHAR(30) NOT NULL,
+    status VARCHAR(30) DEFAULT 'pending_inspection',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================================================
+-- 5. ÓRDENES DE AUTOPARTES Y RESERVAS DE VEHÍCULOS
+-- ============================================================================
+CREATE TABLE orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_number VARCHAR(40) UNIQUE NOT NULL,
+    user_id UUID REFERENCES users(id),
+    order_type VARCHAR(20) CHECK (order_type IN ('parts_purchase', 'vehicle_deposit')),
+    status VARCHAR(30) DEFAULT 'paid',
+    subtotal NUMERIC(12, 2) NOT NULL,
+    shipping_fee NUMERIC(12, 2) DEFAULT 0,
+    total NUMERIC(12, 2) NOT NULL,
+    payment_method VARCHAR(80),
+    shipping_address JSONB,
+    tracking_number VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: APIS & INTEGRACIONES -->
+    <div id="docContentApis" class="space-y-8 hidden">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+            <div>
+                <h2 class="font-display font-black text-2xl text-slate-900">3. Especificación de Endpoints & Integraciones</h2>
+                <p class="text-xs text-slate-500 mt-1">
+                    Arquitectura de microservicios o monolito modular (Node.js/NestJS o FastAPI) con conexiones a servicios externos.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <span class="bg-brand-600 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase">REST / GraphQL</span>
+                    <h3 class="font-black text-slate-900 text-sm">Endpoints Principales</h3>
+                    <ul class="space-y-2 font-mono text-[11px] text-slate-700">
+                        <li><span class="text-emerald-600 font-bold">GET</span> /api/v1/vehicles?make=BMW&fuel=Gasolina</li>
+                        <li><span class="text-emerald-600 font-bold">GET</span> /api/v1/vehicles/:id (Specs + 360 + Inspection)</li>
+                        <li><span class="text-blue-600 font-bold">POST</span> /api/v1/vehicles/reserve (Hold deposit $500)</li>
+                        <li><span class="text-emerald-600 font-bold">GET</span> /api/v1/parts/search?vin=JTMB6...</li>
+                        <li><span class="text-emerald-600 font-bold">GET</span> /api/v1/parts/fitment-check?part_id=X&make=Y</li>
+                        <li><span class="text-blue-600 font-bold">POST</span> /api/v1/appraisal/estimate (Instant market pricing)</li>
+                        <li><span class="text-blue-600 font-bold">POST</span> /api/v1/checkout/parts (Shipping + Payment intent)</li>
+                    </ul>
+                </div>
+
+                <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <span class="bg-accent-500 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase">Integraciones Clave</span>
+                    <h3 class="font-black text-slate-900 text-sm">Servicios Externos Especializados</h3>
+                    <ul class="space-y-2.5 text-slate-600">
+                        <li><strong>🔍 NHTSA vPIC & DataOne VIN API:</strong> Decodificación en milisegundos de especificaciones exactas por chasis.</li>
+                        <li><strong>💳 Stripe & Mercado Pago & PSE:</strong> Webhooks asíncronos para depósitos y órdenes inmediatas.</li>
+                        <li><strong>🚚 Coordinadora / Servientrega API:</strong> Cotización en tiempo real por peso volumétrico y generación de guías.</li>
+                        <li><strong>⚡ Typesense / Elasticsearch:</strong> Motor de búsqueda facetado de alta tolerancia tipográfica para repuestos.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: FLUJOS UX -->
+    <div id="docContentFlows" class="space-y-8 hidden">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+            <div>
+                <h2 class="font-display font-black text-2xl text-slate-900">4. Flujos de Experiencia de Usuario (UX Bimodal)</h2>
+                <p class="text-xs text-slate-500 mt-1">Cómo se optimiza cada embudo de conversión para reducir fricción.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+                <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <span class="text-2xl">🚗</span>
+                    <h4 class="font-black text-slate-900 text-sm">Comprador de Vehículo</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        1. Filtra por marca, precio y combustible.<br>
+                        2. Interactúa con el visor 360° exterior.<br>
+                        3. Consulta el peritaje de 150 puntos y reporte legal.<br>
+                        4. Simula su cuota crediticia mensual.<br>
+                        5. Realiza un apartado de $500 USD con garantía de 72h o agenda Test Drive a domicilio.
+                    </p>
+                </div>
+
+                <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <span class="text-2xl">⚙️</span>
+                    <h4 class="font-black text-slate-900 text-sm">Comprador de Autopartes</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        1. Ingresa su VIN, placa o selecciona su auto en "Mi Garaje".<br>
+                        2. El catálogo oculta o resalta con badge verde las piezas compatibles.<br>
+                        3. Visualiza diagramas OEM y opiniones.<br>
+                        4. Agrega al carrito y el flete se calcula por peso volumétrico.<br>
+                        5. Elige entrega a domicilio o despacho directo a taller aliado.
+                    </p>
+                </div>
+
+                <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <span class="text-2xl">💰</span>
+                    <h4 class="font-black text-slate-900 text-sm">Vendedor de Vehículo</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        1. Ingresa placa, kilometraje y estado general.<br>
+                        2. El algoritmo genera un rango de mercado y una oferta de compra directa.<br>
+                        3. Elige entre pago express en 24h o consignación virtual para ganar más.<br>
+                        4. Se agenda peritaje técnico a domicilio gratuito.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Docs Switcher Script -->
+<script>
+    function switchDocTab(tab) {
+        const tabs = ['sitemap', 'database', 'apis', 'flows'];
+        tabs.forEach(t => {
+            const btn = document.getElementById('docTabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
+            const content = document.getElementById('docContent' + t.charAt(0).toUpperCase() + t.slice(1));
+            if (btn && content) {
+                if (t === tab) {
+                    btn.className = 'px-4 py-2 rounded-xl text-xs font-black bg-slate-900 text-white transition whitespace-nowrap';
+                    content.classList.remove('hidden');
+                } else {
+                    btn.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition whitespace-nowrap';
+                    content.classList.add('hidden');
+                }
+            }
+        });
+    }
+</script>
+
+<%- include('footer') %>

@@ -1,0 +1,587 @@
+<%- include('header') %>
+
+<div class="bg-slate-900 text-white py-12 border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <span class="text-accent-400 font-extrabold text-xs uppercase tracking-wider">Catálogo OEM & Aftermarket Oficial</span>
+                <h1 class="font-display text-3xl sm:text-4xl font-black mt-1">Autopartes & Repuestos Certificados</h1>
+                <p class="text-slate-400 text-xs sm:text-sm mt-1">
+                    Búsqueda exacta por VIN, código OEM o vehículo en garaje (<strong class="text-emerald-400"><%= currentGarage.make %> <%= currentGarage.model %></strong>) con garantía 100%.
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="openGarageModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 transition">
+                    🚗 Cambiar Vehículo en Garaje
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    
+    <!-- DETECTED VEHICLE / VIN ALERT -->
+    <% if (typeof detectedVehicle !== 'undefined' && detectedVehicle) { %>
+        <div class="mb-8 p-5 bg-gradient-to-r from-emerald-900/40 to-blue-900/30 border border-emerald-500/40 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg backdrop-blur-sm">
+            <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center text-xl shrink-0">
+                    🔍
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="bg-emerald-500 text-slate-950 font-black text-[10px] uppercase px-2 py-0.5 rounded-md tracking-wider">
+                            VIN / Vehículo Identificado
+                        </span>
+                        <% if (detectedVehicle.plate) { %>
+                            <span class="bg-slate-800 text-slate-300 font-mono text-[10px] px-2 py-0.5 rounded-md border border-slate-700">
+                                Placa: <%= detectedVehicle.plate %>
+                            </span>
+                        <% } %>
+                    </div>
+                    <h3 class="font-black text-slate-900 sm:text-lg text-base mt-1">
+                        <%= detectedVehicle.make %> <%= detectedVehicle.model ? detectedVehicle.model : '' %> <%= detectedVehicle.year ? '(' + detectedVehicle.year + ')' : '' %>
+                    </h3>
+                    <p class="text-xs text-slate-600 font-mono">
+                        VIN: <%= detectedVehicle.vin %> • Mostrando únicamente autopartes registradas en inventario compatibles.
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="/autopartes" class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-800 font-bold rounded-xl text-xs border border-slate-200 transition shadow-sm">
+                    Ver Todo el Inventario
+                </a>
+            </div>
+        </div>
+    <% } %>
+
+    <!-- CATEGORY PILLS BAR -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-4 mb-8">
+        <a 
+            href="/autopartes" 
+            class="px-4 py-2 rounded-xl text-xs font-black transition whitespace-nowrap <%= !selectedFilters.category || selectedFilters.category === 'all' ? 'bg-brand-600 text-white shadow-md shadow-brand-600/30' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' %>"
+        >
+            Todas las Categorías
+        </a>
+        <% categories.forEach(cat => { %>
+            <a 
+                href="/autopartes?category=<%= encodeURIComponent(cat) %>" 
+                class="px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap <%= selectedFilters.category === cat ? 'bg-brand-600 text-white shadow-md shadow-brand-600/30' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50' %>"
+            >
+                <%= cat %>
+            </a>
+        <% }); %>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- SIDEBAR FILTER -->
+        <aside class="lg:col-span-3">
+            <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm sticky top-28 space-y-6">
+                
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <h3 class="font-display font-black text-slate-900 text-base">Filtros de Búsqueda</h3>
+                    <a href="/autopartes" class="text-xs text-brand-600 hover:underline font-bold">Limpiar</a>
+                </div>
+
+                <form action="/autopartes" method="GET" class="space-y-4">
+                    
+                    <!-- Search Input -->
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">VIN / Placa / SKU / Nombre</label>
+                        <input 
+                            type="text" 
+                            name="search" 
+                            value="<%= selectedFilters.search || '' %>" 
+                            placeholder="Ej: JTMB6RFV, Bosch, BRK-..." 
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                        >
+                    </div>
+
+                    <!-- Vehicle Make Select (Compatibilidad por Marca) -->
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Marca del Auto</label>
+                        <select name="car_make" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <option value="all">Cualquier marca de auto</option>
+                            <% if (typeof allCarMakes !== 'undefined' && allCarMakes.length > 0) { %>
+                                <% allCarMakes.forEach(make => { %>
+                                    <option value="<%= make %>" <%= selectedFilters.car_make === make ? 'selected' : '' %>><%= make %></option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                    </div>
+
+                    <!-- Category Select -->
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Categoría</label>
+                        <select name="category" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <option value="all">Todas las Categorías</option>
+                            <% categories.forEach(c => { %>
+                                <option value="<%= c %>" <%= selectedFilters.category === c ? 'selected' : '' %>><%= c %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+
+                    <!-- Brand Select (Marca del Fabricante del Repuesto) -->
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Marca del Repuesto (OEM/Aftermarket)</label>
+                        <select name="brand" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <option value="all">Todas las Marcas</option>
+                            <% brands.forEach(b => { %>
+                                <option value="<%= b %>" <%= selectedFilters.brand === b ? 'selected' : '' %>><%= b %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+
+                    <!-- Garage Filter Checkbox -->
+                    <div class="p-3 bg-emerald-50 rounded-2xl border border-emerald-200">
+                        <label class="flex items-start gap-2 cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                name="garage_fit_only" 
+                                value="1" 
+                                <%= selectedFilters.garage_fit_only === '1' ? 'checked' : '' %>
+                                class="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500"
+                            >
+                            <span class="text-xs text-emerald-950 font-bold leading-tight">
+                                Mostrar solo piezas compatibles con <%= currentGarage.make %> <%= currentGarage.model %>
+                            </span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-xl transition shadow-md shadow-brand-600/20 text-xs">
+                        Aplicar Filtros
+                    </button>
+                </form>
+
+            </div>
+        </aside>
+
+        <!-- MAIN PARTS LIST -->
+        <main class="lg:col-span-9">
+            <div class="flex items-center justify-between mb-6">
+                <span class="text-xs font-bold text-slate-500">
+                    Mostrando <strong class="text-slate-900"><%= totalCount %></strong> repuestos certificados en inventario
+                </span>
+                <span class="text-xs text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full flex items-center gap-1">
+                    <span>🛡️</span> Garantía de Compatibilidad Oficial
+                </span>
+            </div>
+
+            <% if (parts.length === 0) { %>
+                <div class="bg-white rounded-3xl p-10 sm:p-14 text-center border border-slate-200 shadow-sm">
+                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">⚙️</div>
+                    <h3 class="text-xl font-black text-slate-900">No encontramos piezas para este criterio en el sistema</h3>
+                    <p class="text-xs text-slate-500 mt-2 max-w-md mx-auto">
+                        Solo mostramos piezas que existen físicamente en nuestro inventario oficial. No se permiten piezas no registradas ni datos simulados.
+                    </p>
+                    
+                    <div class="mt-6 flex flex-wrap items-center justify-center gap-2">
+                        <a href="/autopartes" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs transition shadow-md shadow-brand-600/20">
+                            Ver Todo el Inventario Oficial
+                        </a>
+                        <a href="/autopartes?car_make=Toyota" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+                            Repuestos Toyota
+                        </a>
+                        <a href="/autopartes?car_make=BMW" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+                            Repuestos BMW
+                        </a>
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <% parts.forEach(part => { %>
+                        <div class="bg-white rounded-3xl border border-slate-200 p-5 flex flex-col justify-between hover:shadow-xl transition-all duration-300 group">
+                            <div>
+                                <!-- Image Container with Match Badge -->
+                                <div class="relative bg-slate-100 rounded-2xl h-48 flex items-center justify-center p-3 mb-4 overflow-hidden">
+                                    <img src="<%= part.image %>" alt="<%= part.name %>" class="w-full h-full object-cover rounded-xl group-hover:scale-105 transition duration-300">
+                                    
+                                    <% if (part.isGarageCompatible) { %>
+                                        <span class="absolute top-2.5 left-2.5 bg-emerald-600 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-md flex items-center gap-1">
+                                            <span>✓</span> Fit <%= currentGarage.model %>
+                                        </span>
+                                    <% } else { %>
+                                        <span class="absolute top-2.5 left-2.5 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                                            <%= part.brand %>
+                                        </span>
+                                    <% } %>
+                                </div>
+
+                                <div class="flex items-center justify-between text-[10px] text-slate-400 font-mono mb-1">
+                                    <span>SKU: <%= part.sku %></span>
+                                    <span class="text-amber-500 font-bold">★ <%= part.rating %> (<%= part.reviews_count %>)</span>
+                                </div>
+
+                                <h3 class="font-black text-slate-900 text-sm leading-snug line-clamp-2">
+                                    <a href="/autopartes/<%= part.id %>" class="hover:text-brand-600 transition"><%= part.name %></a>
+                                </h3>
+                                <p class="text-xs text-slate-500 mt-1"><%= part.brand %> • <%= part.category %></p>
+                                
+                                <!-- Compatible vehicles snippet -->
+                                <div class="mt-2.5 pt-2 border-t border-slate-100 flex flex-wrap gap-1">
+                                    <% part.compatible_vehicles.slice(0, 3).forEach(cv => { %>
+                                        <span class="text-[9px] bg-slate-100 text-slate-600 font-semibold px-1.5 py-0.5 rounded">
+                                            <%= cv.make %> <%= cv.model %>
+                                        </span>
+                                    <% }); %>
+                                    <% if (part.compatible_vehicles.length > 3) { %>
+                                        <span class="text-[9px] text-slate-400 font-semibold">
+                                            +<%= part.compatible_vehicles.length - 3 %> más
+                                        </span>
+                                    <% } %>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <span class="text-xs text-slate-400 block line-through"><%= formatCOP(part.old_price_cop) %></span>
+                                    <span class="text-base font-black text-slate-900"><%= formatCOP(part.price_cop) %></span>
+                                    <span class="text-[10px] text-slate-500 block"><%= formatUSD(part.price_usd) %></span>
+                                </div>
+
+                                <div class="flex items-center gap-1.5">
+                                    <a 
+                                        href="/autopartes/<%= part.id %>" 
+                                        class="px-2.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-[11px] font-bold text-slate-700 transition"
+                                        title="Ver ficha técnica y compatibilidad vehicular"
+                                    >
+                                        Detalle
+                                    </a>
+                                    
+                                    <!-- Instant Buy with direct payment methods modal -->
+                                    <button 
+                                        type="button" 
+                                        onclick="openCatalogBuyModal('<%= part.id %>', '<%= part.name.replace(/'/g, "\\'") %>', '<%= part.brand %>', '<%= part.sku %>', <%= part.price_cop %>, '<%= part.image %>')"
+                                        class="px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-[11px] transition shadow-md shadow-brand-600/20 flex items-center gap-1 cursor-pointer"
+                                        title="Comprar y ver métodos de pago de inmediato"
+                                    >
+                                        <span>⚡</span> Comprar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } %>
+        </main>
+
+    </div>
+</div>
+
+<!-- GLOBAL MODAL FOR DIRECT AUTOPART BUY & PAYMENT METHODS -->
+<div id="catalogDirectModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto hidden">
+    <div class="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
+        
+        <!-- Header -->
+        <div class="p-5 bg-slate-900 text-white flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <span class="p-2 bg-brand-600 rounded-xl text-lg">⚡</span>
+                <div>
+                    <h3 class="font-display font-black text-base leading-tight">Compra Rápida de Autoparte</h3>
+                    <p class="text-xs text-slate-300">Selecciona tu método de pago para despacho inmediato</p>
+                </div>
+            </div>
+            <button 
+                type="button" 
+                onclick="closeCatalogBuyModal()" 
+                class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition"
+            >
+                ✕
+            </button>
+        </div>
+
+        <!-- Body Form -->
+        <form action="/api/checkout/process" method="POST" class="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+            <input type="hidden" name="direct_part_id" id="catModalPartId" value="">
+            <input type="hidden" name="direct_quantity" id="catModalHiddenQty" value="1">
+
+            <!-- Item Summary in Modal -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <img id="catModalImg" src="" alt="Repuesto" class="w-14 h-14 object-cover rounded-xl border border-slate-200 shrink-0">
+                    <div>
+                        <span class="text-[10px] font-mono text-slate-400 block" id="catModalSkuBrand">SKU: ---</span>
+                        <h4 class="font-black text-slate-900 text-xs sm:text-sm line-clamp-1" id="catModalName">---</h4>
+                        <div class="flex items-center gap-2 mt-1">
+                            <label class="text-[11px] font-bold text-slate-600">Cant:</label>
+                            <select id="catModalQtySelect" onchange="updateCatModalQty(this.value)" class="bg-white border border-slate-300 rounded-lg px-2 py-0.5 text-xs font-bold focus:outline-none">
+                                <option value="1">1 unidad</option>
+                                <option value="2">2 unidades</option>
+                                <option value="3">3 unidades</option>
+                                <option value="4">4 unidades</option>
+                                <option value="5">5 unidades</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right shrink-0">
+                    <span class="text-[10px] text-slate-400 block">Total a Pagar</span>
+                    <span class="font-black text-slate-900 text-sm sm:text-base block text-brand-600" id="catModalDisplayTotal">$0 COP</span>
+                </div>
+            </div>
+
+            <!-- Customer Shipping Info -->
+            <div class="space-y-3">
+                <h4 class="font-display font-black text-slate-900 text-sm flex items-center gap-2">
+                    <span>📦</span> Datos del Comprador & Envío
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nombre Completo *</label>
+                        <input type="text" name="first_name" required placeholder="Carlos" value="Carlos" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Apellidos *</label>
+                        <input type="text" name="last_name" required placeholder="Gómez" value="Gómez" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Email *</label>
+                        <input type="email" name="email" required placeholder="carlos.gomez@ejemplo.com" value="carlos.gomez@ejemplo.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Celular / WhatsApp *</label>
+                        <input type="tel" name="phone" required placeholder="+57 310 987 6543" value="+57 310 987 6543" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Dirección de Entrega *</label>
+                        <input type="text" name="address" required placeholder="Calle 93B # 13-45 Apto 402" value="Calle 93B # 13-45 Apto 402" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ciudad *</label>
+                        <input type="text" name="city" required placeholder="Bogotá D.C." value="Bogotá D.C." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Departamento *</label>
+                        <select name="department" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <option value="Cundinamarca" selected>Cundinamarca / Bogotá</option>
+                            <option value="Antioquia">Antioquia / Medellín</option>
+                            <option value="Valle del Cauca">Valle del Cauca / Cali</option>
+                            <option value="Atlántico">Atlántico / Barranquilla</option>
+                            <option value="Santander">Santander / Bucaramanga</option>
+                            <option value="Bolívar">Bolívar / Cartagena</option>
+                            <option value="Risaralda">Risaralda / Pereira</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAYMENT METHOD SELECTION -->
+            <div class="space-y-4 pt-2 border-t border-slate-100">
+                <div class="flex items-center justify-between">
+                    <h4 class="font-display font-black text-slate-900 text-sm flex items-center gap-2">
+                        <span>💳</span> Método de Pago o Banco
+                    </h4>
+                    <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Red Bancaria Nacional</span>
+                </div>
+
+                <!-- Selector Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    
+                    <label class="cat-modal-pm-card border-2 border-brand-500 bg-brand-50/60 rounded-2xl p-2.5 cursor-pointer transition flex flex-col items-center text-center gap-1 hover:border-brand-600">
+                        <input type="radio" name="payment_method" value="pse" checked onchange="switchCatModalPM('pse')" class="sr-only">
+                        <span class="text-xl">🏛️</span>
+                        <span class="text-xs font-black text-slate-900 block leading-tight">PSE Bancos</span>
+                        <span class="text-[9px] text-slate-500 font-medium">19 Bancos</span>
+                    </label>
+
+                    <label class="cat-modal-pm-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-2.5 cursor-pointer transition flex flex-col items-center text-center gap-1">
+                        <input type="radio" name="payment_method" value="wallet" onchange="switchCatModalPM('wallet')" class="sr-only">
+                        <span class="text-xl">📱</span>
+                        <span class="text-xs font-black text-slate-900 block leading-tight">Nequi / Davi</span>
+                        <span class="text-[9px] text-slate-500 font-medium">Push Móvil</span>
+                    </label>
+
+                    <label class="cat-modal-pm-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-2.5 cursor-pointer transition flex flex-col items-center text-center gap-1">
+                        <input type="radio" name="payment_method" value="card" onchange="switchCatModalPM('card')" class="sr-only">
+                        <span class="text-xl">💳</span>
+                        <span class="text-xs font-black text-slate-900 block leading-tight">Tarjeta Crédito</span>
+                        <span class="text-[9px] text-slate-500 font-medium">Visa/MC/Amex</span>
+                    </label>
+
+                    <label class="cat-modal-pm-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-2.5 cursor-pointer transition flex flex-col items-center text-center gap-1">
+                        <input type="radio" name="payment_method" value="transfer" onchange="switchCatModalPM('transfer')" class="sr-only">
+                        <span class="text-xl">📑</span>
+                        <span class="text-xs font-black text-slate-900 block leading-tight">Transferencia</span>
+                        <span class="text-[9px] text-slate-500 font-medium">Bancolombia</span>
+                    </label>
+
+                </div>
+
+                <!-- 1. PSE Box -->
+                <div id="cat-modal-field-pse" class="cat-modal-fields bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3">
+                    <div class="flex items-center justify-between pb-1.5 border-b border-slate-200">
+                        <span class="font-black text-slate-800 text-[11px]">Pagos Seguros en Línea (PSE)</span>
+                        <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">19 Bancos de Colombia</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div class="sm:col-span-2">
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Banco o Entidad *</label>
+                            <select name="pse_bank" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="Bancolombia" selected>Bancolombia</option>
+                                <option value="Banco de Bogotá">Banco de Bogotá</option>
+                                <option value="Davivienda">Davivienda</option>
+                                <option value="BBVA Colombia">BBVA Colombia</option>
+                                <option value="Banco de Occidente">Banco de Occidente</option>
+                                <option value="Banco Popular">Banco Popular</option>
+                                <option value="Banco AV Villas">Banco AV Villas</option>
+                                <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
+                                <option value="Banco Caja Social">Banco Caja Social</option>
+                                <option value="Banco Itaú Colombia">Banco Itaú Colombia</option>
+                                <option value="Banco Agrario de Colombia">Banco Agrario de Colombia</option>
+                                <option value="Lulo Bank">Lulo Bank</option>
+                                <option value="Nu Colombia (Nubank)">Nu Colombia (Nubank)</option>
+                                <option value="Dale!">Dale!</option>
+                                <option value="Nequi">Nequi</option>
+                                <option value="Daviplata">Daviplata</option>
+                                <option value="RappiPay">RappiPay</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Tipo de Persona *</label>
+                            <select name="pse_person_type" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="Persona Natural">Persona Natural</option>
+                                <option value="Persona Jurídica">Persona Jurídica</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Documento Identidad *</label>
+                            <input type="text" name="pse_doc_number" placeholder="Ej: 1098765432" value="1098765432" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Wallet Box -->
+                <div id="cat-modal-field-wallet" class="cat-modal-fields bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3 hidden">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Billetera *</label>
+                            <select name="wallet_provider" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="Nequi" selected>Nequi</option>
+                                <option value="Daviplata">Daviplata</option>
+                                <option value="Dale!">Dale!</option>
+                                <option value="Transfiya">Transfiya</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Celular *</label>
+                            <input type="tel" name="wallet_phone" placeholder="310 987 6543" value="3109876543" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Card Box -->
+                <div id="cat-modal-field-card" class="cat-modal-fields bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3 hidden">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div class="sm:col-span-2">
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Número de Tarjeta *</label>
+                            <input type="text" name="card_number" placeholder="4532 8921 0492 8821" value="4532 8921 0492 8821" maxlength="19" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono font-bold tracking-wider focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Titular *</label>
+                            <input type="text" name="card_holder" placeholder="CARLOS GOMEZ" value="CARLOS GOMEZ" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs uppercase font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Vence *</label>
+                                <input type="text" name="card_exp" placeholder="08/28" value="08/28" maxlength="5" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-center font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">CVV *</label>
+                                <input type="password" name="card_cvv" placeholder="•••" value="892" maxlength="4" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-center font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Transfer Box -->
+                <div id="cat-modal-field-transfer" class="cat-modal-fields bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3 hidden">
+                    <div class="p-3 bg-emerald-950 text-white rounded-xl text-xs space-y-1">
+                        <div class="text-[10px] text-emerald-400 font-bold uppercase">Bancolombia Cuenta Corriente Oficial</div>
+                        <div class="font-mono font-black text-sm text-emerald-200">048-928192-11 (NIT 901.482.109-3)</div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">Banco Origen *</label>
+                            <input type="text" name="transfer_origin_bank" placeholder="Bancolombia" value="Bancolombia" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 uppercase mb-1">No. Comprobante *</label>
+                            <input type="text" name="transfer_ref_number" placeholder="Ej: TRF-9182310" value="TRF-9182310" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-3">
+                <button 
+                    type="submit" 
+                    class="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-2xl transition shadow-xl shadow-brand-600/30 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                >
+                    <span>🔒</span> Confirmar y Pagar Repuesto
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let currentPartPrice = 0;
+
+    function openCatalogBuyModal(partId, name, brand, sku, priceCop, image) {
+        if (!window.IS_USER_LOGGED_IN) {
+            showAuthRequiredModal('/autopartes/' + partId, 'Para comprar este repuesto debes registrarte si no estás registrado o iniciar sesión si ya tienes cuenta.');
+            return;
+        }
+        currentPartPrice = priceCop;
+        document.getElementById('catModalPartId').value = partId;
+        document.getElementById('catModalName').textContent = name;
+        document.getElementById('catModalSkuBrand').textContent = 'SKU: ' + sku + ' • ' + brand;
+        document.getElementById('catModalImg').src = image;
+        document.getElementById('catModalQtySelect').value = '1';
+        
+        updateCatModalQty(1);
+        document.getElementById('catalogDirectModal').classList.remove('hidden');
+    }
+
+    function closeCatalogBuyModal() {
+        document.getElementById('catalogDirectModal').classList.add('hidden');
+    }
+
+    function updateCatModalQty(qtyVal) {
+        const qty = parseInt(qtyVal, 10) || 1;
+        document.getElementById('catModalHiddenQty').value = qty;
+        const subtotal = currentPartPrice * qty;
+        const shipping = subtotal >= 200000 ? 0 : 18000;
+        const total = subtotal + shipping;
+        const totalFormatted = '$' + total.toLocaleString('es-CO') + ' COP' + (shipping === 0 ? ' (Envío Gratis)' : '');
+        document.getElementById('catModalDisplayTotal').textContent = totalFormatted;
+    }
+
+    function switchCatModalPM(methodKey) {
+        const boxes = document.querySelectorAll('.cat-modal-fields');
+        boxes.forEach(b => b.classList.add('hidden'));
+
+        const target = document.getElementById('cat-modal-field-' + methodKey);
+        if (target) {
+            target.classList.remove('hidden');
+        }
+
+        const cards = document.querySelectorAll('.cat-modal-pm-card');
+        cards.forEach(c => {
+            const input = c.querySelector('input[type="radio"]');
+            if (input && input.value === methodKey) {
+                input.checked = true;
+                c.classList.add('border-brand-500', 'bg-brand-50/60');
+                c.classList.remove('border-slate-200');
+            } else {
+                c.classList.remove('border-brand-500', 'bg-brand-50/60');
+                c.classList.add('border-slate-200');
+            }
+        });
+    }
+</script>
+
+<%- include('footer') %>

@@ -1,7 +1,11 @@
+// server.js - AutoHub Motors & Parts Full Stack Platform
 import express from 'express';
 import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { INITIAL_VEHICLES } from './data/vehicles.js';
+import { INITIAL_PARTS } from './data/parts.js';
+import { INITIAL_USERS } from './data/users.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,907 +13,1250 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3000;
 
-// Set up view engine
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+// Mutable In-Memory Databases
+const USERS_DB = [...INITIAL_USERS];
+const OTP_STORE = {};
 
-// Middlewares
-app.use(express.urlencoded({ extended: true }));
+// Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/css', express.static(path.join(__dirname, 'public/css')));
 app.use('/js', express.static(path.join(__dirname, 'public/js')));
 
-// Session configuration
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Session Configuration
 app.use(
   session({
-    secret: 'tienda-colombia-secret-ecommerce-2026',
+    secret: 'autohub-automotive-secret-key-2026',
     resave: false,
     saveUninitialized: true,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 }
+    cookie: { secure: false, maxAge: 1000 * 60 * 60 * 24 } // 1 day
   })
 );
 
-// Initial Rich Catalog with Colombian Pesos (COP)
-let defaultProducts = {
-  1: {
-    id: 1,
-    name: 'MacBook Pro 16" M3 Max',
-    category: 'Electrónica',
-    price: 14499000.0,
-    discount: 12,
-    rating: 4.9,
-    reviewsCount: 38,
-    stock: 8,
-    badge: 'Más Vendido',
-    description: 'Potencia profesional extrema con chip M3 Max, pantalla Liquid Retina XDR de 120Hz y hasta 22 horas de autonomía.',
-    specs: '36GB RAM Unificada, 1TB SSD NVMe, Chip M3 Max (16 núcleos CPU / 40 GPU), Gris Espacial',
-    image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800&auto=format&fit=crop&q=80'
-    ]
-  },
-  2: {
-    id: 2,
-    name: 'Sony WH-1000XM5 Noise Cancelling',
-    category: 'Audio',
-    price: 1799000.0,
-    discount: 18,
-    rating: 4.8,
-    reviewsCount: 114,
-    stock: 15,
-    badge: 'Oferta',
-    description: 'Audífonos inalámbricos líderes en cancelación de ruido activa con procesador V1, audio Hi-Res y llamadas ultra nítidas.',
-    specs: 'Cancelación Activa Doble Chip, 30h Batería, Bluetooth 5.2 LDAC, Carga Rápida 3min = 3h',
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=800&auto=format&fit=crop&q=80'
-    ]
-  },
-  3: {
-    id: 3,
-    name: 'iPhone 15 Pro Titanium 256GB',
-    category: 'Electrónica',
-    price: 5299000.0,
-    discount: 8,
-    rating: 4.9,
-    reviewsCount: 82,
-    stock: 12,
-    badge: 'Nuevo',
-    description: 'Diseño en titanio de grado aeroespacial, chip A17 Pro revolucionario para gaming y cámara de 48 MP con zoom óptico 5x.',
-    specs: 'Pantalla 6.1" OLED Super Retina XDR ProMotion, 256GB, USB-C 3.0, Botón de Acción',
-    image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop&q=80'
-    ]
-  },
-  4: {
-    id: 4,
-    name: 'Silla Ergonómica Herman Miller Aeron Style',
-    category: 'Hogar & Oficina',
-    price: 2450000.0,
-    discount: 15,
-    rating: 4.7,
-    reviewsCount: 46,
-    stock: 6,
-    badge: 'Ergonómico',
-    description: 'Silla ejecutiva de alto confort con malla Pellicle transpirable, soporte lumbar PostureFit SL y reclinación sincronizada.',
-    specs: 'Estructura de Aluminio Reforzado, Brazos 4D Ajustables, Pistón Clase 4, Capacidad 150kg',
-    image: 'https://images.unsplash.com/photo-1580481077195-c3a9f0a5317b?w=800&auto=format&fit=crop&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1580481077195-c3a9f0a5317b?w=800&auto=format&fit=crop&q=80'
-    ]
-  },
-  5: {
-    id: 5,
-    name: 'Smartwatch Galaxy Watch Ultra 47mm',
-    category: 'Gadgets',
-    price: 2390000.0,
-    discount: 20,
-    rating: 4.8,
-    reviewsCount: 63,
-    stock: 10,
-    badge: 'Oferta',
-    description: 'Reloj inteligente todoterreno con caja de titanio grado 4, GPS dual de precisión, ECG y resistencia al agua 10ATM.',
-    specs: 'Pantalla Sapphire Crystal 3000 nits, Batería 100h en modo ahorro, Sensor BioActive, LTE',
-    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80'
-    ]
-  },
-  6: {
-    id: 6,
-    name: 'Cafetera Espresso Barista Touch Pro',
-    category: 'Hogar & Oficina',
-    price: 3150000.0,
-    discount: 10,
-    rating: 4.9,
-    reviewsCount: 29,
-    stock: 5,
-    badge: 'Premium',
-    description: 'Prepara café de especialidad colombiano en casa con molinillo integrado cónico, control digital de temperatura PID y vaporizador microespuma.',
-    specs: 'Bomba italiana 15 Bares, Pantalla Touch LCD, Molino de 30 niveles, Acero Inoxidable 304',
-    image: 'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=800&auto=format&fit=crop&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=800&auto=format&fit=crop&q=80'
-    ]
-  },
-  7: {
-    id: 7,
-    name: 'Tenis Running Nike Air Zoom Alpha',
-    category: 'Moda & Deportes',
-    price: 689000.0,
-    discount: 0,
-    rating: 4.6,
-    reviewsCount: 75,
-    stock: 18,
-    badge: 'Popular',
-    description: 'Calzado para correr de alto kilometraje con amortiguación de espuma reactiva ZoomX y placa de fibra de carbono.',
-    specs: 'Suela de goma antideslizante, Tejido Flyknit transpirable, Drop 8mm, Peso 215g',
-    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=80'
-    ]
-  },
-  8: {
-    id: 8,
-    name: 'Cámara Mirrorless Sony Alpha A7 IV',
-    category: 'Fotografía',
-    price: 11490000.0,
-    discount: 15,
-    rating: 5.0,
-    reviewsCount: 42,
-    stock: 4,
-    badge: 'Pro',
-    description: 'Sensor Full-Frame de 33MP, grabación 4K a 60p en 10-bit 4:2:2, estabilización en el cuerpo de 5.5 pasos y enfoque por IA en tiempo real.',
-    specs: 'Sensor Exmor R BSI CMOS, 759 puntos AF detección de fases, Doble ranura SD/CFexpress, HDMI tipo A',
-    image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop&q=80'
-    ]
+// Helper to format currency
+function formatCOP(amount) {
+  if (amount === null || amount === undefined || isNaN(amount)) return '$ 0 COP';
+  return '$ ' + Math.round(amount).toLocaleString('es-CO') + ' COP';
+}
+
+function formatCOPShort(amount) {
+  if (amount === null || amount === undefined || isNaN(amount)) return '$ 0';
+  return '$ ' + Math.round(amount).toLocaleString('es-CO');
+}
+
+function formatUSD(amount) {
+  return '$' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' USD';
+}
+
+// VIN & Plate Resolution Engine for Accurate System Autoparts Matching
+function resolveVehicleFromVINorSearch(query) {
+  if (!query || typeof query !== 'string') return null;
+  const clean = query.trim().toUpperCase();
+  if (!clean || clean.length < 3) return null;
+
+  // 1. Direct match in INITIAL_VEHICLES by exact VIN, plate, or id
+  const directVehicle = INITIAL_VEHICLES.find(v => 
+    (v.vin && v.vin.toUpperCase() === clean) ||
+    (v.plate && v.plate.toUpperCase() === clean) ||
+    (v.id && v.id.toUpperCase() === clean)
+  );
+  if (directVehicle) {
+    return {
+      source: 'database_vehicle',
+      make: directVehicle.make,
+      model: directVehicle.model,
+      year: directVehicle.year,
+      vin: directVehicle.vin,
+      plate: directVehicle.plate,
+      title: directVehicle.title
+    };
   }
-};
 
-let globalConfig = {
-  store_name: 'Tienda Colombia',
-  tagline: 'Tu tienda en línea favorita para tecnología, audio, moda y hogar en Colombia',
-  tax: 19,
-  shipping: 18000.0,
-  free_shipping_threshold: 200000.0,
-  currency: 'COP'
-};
+  // 2. Partial match in INITIAL_VEHICLES (e.g. 5+ characters of VIN or plate without hyphens)
+  const partialVehicle = INITIAL_VEHICLES.find(v => 
+    (v.vin && clean.length >= 6 && v.vin.toUpperCase().includes(clean)) ||
+    (v.plate && clean.replace(/[^A-Z0-9]/g, '') === v.plate.replace(/[^A-Z0-9]/g, ''))
+  );
+  if (partialVehicle) {
+    return {
+      source: 'database_vehicle',
+      make: partialVehicle.make,
+      model: partialVehicle.model,
+      year: partialVehicle.year,
+      vin: partialVehicle.vin,
+      plate: partialVehicle.plate,
+      title: partialVehicle.title
+    };
+  }
 
-let defaultCoupons = {
-  'BIENVENIDO10': { code: 'BIENVENIDO10', type: 'percent', value: 10, description: '10% de descuento de bienvenida' },
-  'SUPER20': { code: 'SUPER20', type: 'percent', value: 20, description: '20% de descuento especial' },
-  'ENVIOGRATIS': { code: 'ENVIOGRATIS', type: 'free_shipping', value: 0, description: 'Envío completamente gratis' },
-  'DESCUENTO50K': { code: 'DESCUENTO50K', type: 'fixed', value: 50000, description: '$50.000 COP de descuento directo' }
-};
+  // 3. Standard NHTSA / ISO 3779 WMI (World Manufacturer Identifier) Decoders
+  const WMI_MAP = [
+    { prefixes: ['JTM', 'JT1', 'JT2', 'JT3', 'JT4', 'JT5', '4T1', '4T3', '4T4', '2T1'], make: 'Toyota' },
+    { prefixes: ['WBS', 'WBA', 'WBX', 'WBY', '4US'], make: 'BMW' },
+    { prefixes: ['WP0', 'WP1'], make: 'Porsche' },
+    { prefixes: ['WAU', 'WA1'], make: 'Audi' },
+    { prefixes: ['JM1', 'JMZ', '3MZ'], make: 'Mazda' },
+    { prefixes: ['1G1', '1G2', '1GC', '3G1', '9BG', 'KL1'], make: 'Chevrolet' },
+    { prefixes: ['1FA', '1FT', '1FM', '3FA', '3FT'], make: 'Ford' },
+    { prefixes: ['VF1', '93Y', '8A1'], make: 'Renault' },
+    { prefixes: ['WVW', '3VW', '9BW'], make: 'Volkswagen' },
+    { prefixes: ['KMH', 'KM8', 'MAL'], make: 'Hyundai' },
+    { prefixes: ['KNA', 'KND', 'KNE'], make: 'Kia' },
+    { prefixes: ['1C4', '1J4'], make: 'Jeep' },
+    { prefixes: ['JN1', '3N1', '5N1'], make: 'Nissan' },
+    { prefixes: ['WDB', 'WDC', 'W1N', '4JG'], make: 'Mercedes-Benz' }
+  ];
 
-let globalOrders = {
-  'ORD-COL101': {
-    id: 'ORD-COL101',
-    date: '2026-08-25 14:32:10',
-    status: 'Enviado',
-    trackingNumber: 'SERVI-88294719CO',
-    paymentMethod: 'PSE (Bancolombia)',
-    shippingMethod: 'Express Colombia (24-48 hrs)',
-    customer: {
-      name: 'Andrés Felipe Restrepo',
-      email: 'andres.restrepo@email.com',
-      phone: '+57 310 456 7890',
-      address: 'Cra. 15 # 93-60, Chicó Norte, Bogotá D.C., C.P. 110221'
-    },
-    items: [
-      {
-        product: defaultProducts[2],
-        quantity: 1,
-        unit_price: 1475180.0,
-        total: 1475180.0
+  for (const entry of WMI_MAP) {
+    for (const p of entry.prefixes) {
+      if (clean.startsWith(p)) {
+        return {
+          source: 'wmi_vin_decoder',
+          make: entry.make,
+          model: '',
+          year: null,
+          vin: clean
+        };
       }
-    ],
-    subtotal: 1475180.0,
-    discountAmount: 0,
-    couponCode: null,
-    tax: 280284.2,
-    shipping: 18000.0,
-    total: 1773464.2
-  }
-};
-
-// Middleware for Session and Locals
-app.use((req, res, next) => {
-  // If session has legacy Mexican config, update to Colombian Pesos
-  if (!req.session.config || req.session.config.currency === 'MXN') {
-    req.session.config = { ...globalConfig };
-    req.session.products = JSON.parse(JSON.stringify(defaultProducts));
-    req.session.coupons = { ...defaultCoupons };
-    req.session.orders = JSON.parse(JSON.stringify(globalOrders));
-    req.session.cart = {};
-    req.session.activeCoupon = null;
-  }
-  if (!req.session.products) {
-    req.session.products = JSON.parse(JSON.stringify(defaultProducts));
-  }
-  if (!req.session.cart) {
-    req.session.cart = {};
-  }
-  if (!req.session.wishlist) {
-    req.session.wishlist = [];
-  }
-  if (!req.session.orders) {
-    req.session.orders = JSON.parse(JSON.stringify(globalOrders));
-  }
-  if (!req.session.coupons) {
-    req.session.coupons = { ...defaultCoupons };
-  }
-  if (req.session.activeCoupon === undefined) {
-    req.session.activeCoupon = null;
+    }
   }
 
-  // Flash message system
-  res.locals.flash = req.session.flash || null;
-  req.session.flash = null;
+  return null;
+}
 
-  // Cart total badge
-  const cartValues = Object.values(req.session.cart || {});
-  const cartCount = cartValues.reduce((sum, qty) => sum + (Number(qty) || 0), 0);
-  const wishlistCount = (req.session.wishlist || []).length;
+// Helper to parse dynamic payment method & bank details
+function extractPaymentDetails(body) {
+  const method = (body.payment_method || 'pse').toLowerCase();
+  
+  if (method.includes('pse')) {
+    return {
+      type: 'PSE - Pagos Seguros en Línea',
+      methodKey: 'pse',
+      bankName: body.pse_bank || 'Bancolombia',
+      personType: body.pse_person_type || 'Persona Natural',
+      docType: body.pse_doc_type || 'CC',
+      docNumber: body.pse_doc_number || '1.098.765.432',
+      email: body.pse_email || body.customer_email || body.email || 'cliente@banco.com',
+      phone: body.pse_phone || body.customer_phone || body.phone || '3001234567',
+      transactionRef: 'ACH-' + Math.floor(100000000 + Math.random() * 900000000),
+      authCode: 'AUT-' + Math.floor(100000 + Math.random() * 900000),
+      status: 'Aprobada por ACH Colombia / Banco'
+    };
+  }
+  
+  if (method.includes('transfer') || method.includes('consignacion') || method.includes('bancaria')) {
+    return {
+      type: 'Transferencia Bancaria Directa / QR Interoperable',
+      methodKey: 'transfer',
+      targetBank: body.transfer_target_bank || 'Bancolombia (Cta Corriente #048-928192-11)',
+      originBank: body.transfer_origin_bank || 'Bancolombia',
+      transferRef: body.transfer_ref_number || ('TRF-' + Math.floor(10000000 + Math.random() * 90000000)),
+      holderName: body.transfer_holder_name || body.customer_name || 'Titular de Cuenta',
+      transferDate: body.transfer_date || new Date().toISOString().substring(0, 10),
+      status: 'Comprobante Registrado / Verificación en Línea Exitosa'
+    };
+  }
+  
+  if (method.includes('wallet') || method.includes('nequi') || method.includes('daviplata')) {
+    return {
+      type: 'Billetera Digital Directa',
+      methodKey: 'wallet',
+      walletName: body.wallet_provider || (method.includes('daviplata') ? 'Daviplata' : 'Nequi'),
+      walletPhone: body.wallet_phone || body.customer_phone || body.phone || '3109876543',
+      walletDocNumber: body.wallet_doc_number || '1.032.456.789',
+      pushRef: 'WAL-' + Math.floor(10000000 + Math.random() * 90000000),
+      status: 'Notificación Push Confirmada en App Móvil'
+    };
+  }
+  
+  if (method.includes('card') || method.includes('tarjeta') || method.includes('credito') || method.includes('debito')) {
+    const rawCard = (body.card_number || '4532 8921 0492 8821').replace(/\s+/g, '');
+    const last4 = rawCard.length >= 4 ? rawCard.slice(-4) : '8821';
+    let brand = body.card_brand || 'Visa';
+    if (rawCard.startsWith('5')) brand = 'MasterCard';
+    if (rawCard.startsWith('3')) brand = 'American Express';
+    if (rawCard.startsWith('6')) brand = 'Discover / Diners';
 
-  // Global Money / Currency Formatter Helper for Colombian Pesos
-  const formatMoney = (val) => {
-    const num = Number(val) || 0;
-    return '$' + Math.round(num).toLocaleString('es-CO');
+    return {
+      type: 'Tarjeta de Crédito / Débito',
+      methodKey: 'card',
+      cardBrand: brand,
+      cardType: body.card_type || 'Tarjeta de Crédito',
+      maskedCard: `•••• •••• •••• ${last4}`,
+      cardHolder: (body.card_holder || body.customer_name || 'Carlos Gómez').toUpperCase(),
+      installments: Number(body.card_installments) || 1,
+      expDate: body.card_exp || '08/28',
+      docType: body.card_doc_type || 'CC',
+      docNumber: body.card_doc_number || '1.020.304.506',
+      authCode: 'AUTH-' + Math.floor(100000 + Math.random() * 900000),
+      status: 'Transacción Autorizada por Franquicia Bancaria'
+    };
+  }
+  
+  if (method.includes('credit') || method.includes('financiam') || method.includes('sufi')) {
+    return {
+      type: 'Crédito Vehicular & Financiamiento Automotriz',
+      methodKey: 'credit',
+      entityName: body.credit_entity || 'Sufi (Grupo Bancolombia)',
+      downPaymentCOP: Number(body.credit_down_payment) || 2000000,
+      termMonths: Number(body.credit_term_months) || 48,
+      employmentType: body.credit_employment_type || 'Empleado a Término Indefinido',
+      monthlyIncome: Number(body.credit_income) || 5500000,
+      preApprovedCode: 'PRE-APROB-' + Math.floor(100000 + Math.random() * 900000),
+      status: 'Estudio de Crédito Viable & Pre-Aprobado'
+    };
+  }
+  
+  if (method.includes('paypal')) {
+    return {
+      type: 'PayPal Express Checkout (USD)',
+      methodKey: 'paypal',
+      paypalEmail: body.paypal_email || body.customer_email || body.email || 'comprador@paypal.com',
+      payerCountry: body.paypal_country || 'Colombia (CO)',
+      transactionId: 'PAYPAL-TX-' + Math.floor(10000000 + Math.random() * 90000000),
+      status: 'Capturado Exitosamente en Pasarela Internacional PayPal'
+    };
+  }
+  
+  if (method.includes('mercadopago')) {
+    return {
+      type: 'Mercado Pago Wallet & Saldo en Cuenta',
+      methodKey: 'mercadopago',
+      mpEmail: body.mp_email || body.customer_email || body.email || 'cliente@mercadopago.com',
+      mpDocNumber: body.mp_doc_number || '1.018.990.221',
+      mpPaymentId: 'MP-' + Math.floor(1000000000 + Math.random() * 9000000000),
+      status: 'Aprobado Instantáneo Mercado Pago'
+    };
+  }
+  
+  return {
+    type: body.payment_method || 'Pago Seguro Bancario AutoHub',
+    methodKey: 'general',
+    status: 'Transacción Exitosa y Verificada'
   };
+}
 
-  res.locals.formatMoney = formatMoney;
+// Global View Helpers Middleware
+app.use((req, res, next) => {
+  if (!req.session.cart) req.session.cart = {};
+  if (!req.session.wishlist) req.session.wishlist = [];
+  if (!req.session.reservations) req.session.reservations = [];
+  if (!req.session.orders) req.session.orders = [];
+  if (!req.session.garageVehicle) {
+    req.session.garageVehicle = {
+      make: 'Toyota',
+      model: 'RAV4',
+      year: 2021,
+      engine: '2.5L Híbrido',
+      plate: 'KLU-842'
+    };
+  }
+  if (!req.session.userSettings) {
+    req.session.userSettings = {
+      currency: 'COP',
+      defaultCity: 'Bogotá D.C.',
+      autoFilterGarage: true,
+      partnerInstallDefault: false,
+      extendedWarrantyPrompt: true
+    };
+  }
+
+  // Sync user profile garage if logged in
+  if (req.session.user && req.session.user.garageVehicle) {
+    req.session.garageVehicle = req.session.user.garageVehicle;
+  }
+
+  // Cart item count
+  let cartCount = 0;
+  for (const pid in req.session.cart) {
+    cartCount += req.session.cart[pid] || 0;
+  }
+
+  res.locals.currentUser = req.session.user || null;
+  res.locals.ordersCount = req.session.orders ? req.session.orders.length : 0;
   res.locals.cartCount = cartCount;
-  res.locals.wishlistCount = wishlistCount;
-  res.locals.wishlist = req.session.wishlist || [];
-  res.locals.config = req.session.config;
-  res.locals.session = req.session;
+  res.locals.wishlistCount = req.session.wishlist.length;
+  res.locals.garageVehicle = req.session.garageVehicle;
+  res.locals.userSettings = req.session.userSettings;
+  res.locals.formatCOP = formatCOP;
+  res.locals.formatCOPShort = formatCOPShort;
+  res.locals.formatUSD = formatUSD;
   res.locals.currentYear = new Date().getFullYear();
+  res.locals.currentPath = req.path;
+  res.locals.flash = req.session.flash || null;
+  delete req.session.flash;
 
   next();
 });
 
-// Helper Functions
-function getProducts(req, { category = null, search = null, sort = null, minPrice = null, maxPrice = null, inStock = false }) {
-  let products = Object.values(req.session.products || {});
+// -------------------------------------------------------------
+// ROUTES
+// -------------------------------------------------------------
 
-  if (category && category.trim() !== '') {
-    products = products.filter(
-      p => p.category && p.category.toLowerCase() === category.toLowerCase()
-    );
+// 1. HOME LANDING PAGE (Dual Showcase & Search)
+app.get(['/', '/index.php'], (req, res) => {
+  const featuredVehicles = INITIAL_VEHICLES.slice(0, 3);
+  const featuredParts = INITIAL_PARTS.slice(0, 4);
+  const categories = [...new Set(INITIAL_PARTS.map(p => p.category))];
+  const carMakes = [...new Set(INITIAL_PARTS.flatMap(p => p.compatible_vehicles.map(cv => cv.make)))].sort();
+
+  res.render('catalog', {
+    title: 'AutoHub | Vehículos Certificados & Autopartes Compatibles',
+    featuredVehicles,
+    featuredParts,
+    categories,
+    carMakes,
+    totalVehicles: INITIAL_VEHICLES.length,
+    totalParts: INITIAL_PARTS.length
+  });
+});
+
+// 2. VEHICLES CATALOG & FACETED SEARCH
+app.get('/vehiculos', (req, res) => {
+  const { make, fuel, transmission, city, min_price, max_price, sort, search } = req.query;
+
+  let filtered = [...INITIAL_VEHICLES];
+
+  if (make && make !== 'all') {
+    filtered = filtered.filter(v => v.make.toLowerCase() === make.toLowerCase());
+  }
+  if (fuel && fuel !== 'all') {
+    filtered = filtered.filter(v => v.fuel.toLowerCase() === fuel.toLowerCase());
+  }
+  if (transmission && transmission !== 'all') {
+    filtered = filtered.filter(v => v.transmission.toLowerCase().includes(transmission.toLowerCase()));
+  }
+  if (city && city !== 'all') {
+    filtered = filtered.filter(v => v.city.toLowerCase() === city.toLowerCase());
+  }
+  if (min_price) {
+    const minVal = Number(min_price);
+    filtered = filtered.filter(v => minVal > 1000000 ? v.price_cop >= minVal : v.price_usd >= minVal);
+  }
+  if (max_price) {
+    const maxVal = Number(max_price);
+    filtered = filtered.filter(v => maxVal > 1000000 ? v.price_cop <= maxVal : v.price_usd <= maxVal);
+  }
+  if (search) {
+    const q = (Array.isArray(search) ? search.filter(Boolean).join(' ') : String(search)).trim().toLowerCase();
+    if (q) {
+      filtered = filtered.filter(v => 
+        v.title.toLowerCase().includes(q) ||
+        v.make.toLowerCase().includes(q) ||
+        v.model.toLowerCase().includes(q) ||
+        v.vin.toLowerCase().includes(q) ||
+        v.plate.toLowerCase().includes(q)
+      );
+    }
   }
 
-  if (search && search.trim() !== '') {
-    const term = search.toLowerCase();
-    products = products.filter(
-      p =>
-        (p.name && p.name.toLowerCase().includes(term)) ||
-        (p.specs && p.specs.toLowerCase().includes(term)) ||
-        (p.description && p.description.toLowerCase().includes(term)) ||
-        (p.category && p.category.toLowerCase().includes(term))
-    );
-  }
-
-  if (minPrice !== null && !isNaN(minPrice) && minPrice !== '') {
-    products = products.filter(p => {
-      const finalPrice = p.price * (1 - (p.discount || 0) / 100);
-      return finalPrice >= parseFloat(minPrice);
-    });
-  }
-
-  if (maxPrice !== null && !isNaN(maxPrice) && maxPrice !== '') {
-    products = products.filter(p => {
-      const finalPrice = p.price * (1 - (p.discount || 0) / 100);
-      return finalPrice <= parseFloat(maxPrice);
-    });
-  }
-
-  if (inStock) {
-    products = products.filter(p => (p.stock || 0) > 0);
-  }
-
-  // Sorting
+  // Sorting in Colombian Pesos
   if (sort === 'price_asc') {
-    products.sort((a, b) => {
-      const pA = a.price * (1 - (a.discount || 0) / 100);
-      const pB = b.price * (1 - (b.discount || 0) / 100);
-      return pA - pB;
-    });
+    filtered.sort((a, b) => a.price_cop - b.price_cop);
   } else if (sort === 'price_desc') {
-    products.sort((a, b) => {
-      const pA = a.price * (1 - (a.discount || 0) / 100);
-      const pB = b.price * (1 - (b.discount || 0) / 100);
-      return pB - pA;
-    });
-  } else if (sort === 'discount') {
-    products.sort((a, b) => (b.discount || 0) - (a.discount || 0));
-  } else if (sort === 'rating') {
-    products.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-  } else if (sort === 'newest') {
-    products.sort((a, b) => b.id - a.id);
+    filtered.sort((a, b) => b.price_cop - a.price_cop);
+  } else if (sort === 'year_desc') {
+    filtered.sort((a, b) => b.year - a.year);
+  } else if (sort === 'mileage_asc') {
+    filtered.sort((a, b) => a.mileage_km - b.mileage_km);
   }
 
-  return products;
-}
+  const makes = [...new Set(INITIAL_VEHICLES.map(v => v.make))];
+  const fuels = [...new Set(INITIAL_VEHICLES.map(v => v.fuel))];
+  const cities = [...new Set(INITIAL_VEHICLES.map(v => v.city))];
 
-function calculateCartTotals(req, shippingType = 'standard') {
-  const cartItems = req.session.cart || {};
-  const products = req.session.products || {};
-  const taxRate = Number(req.session.config && req.session.config.tax) || 19;
-  const baseShipping = Number(req.session.config && req.session.config.shipping) || 18000.0;
-  const freeThreshold = Number(req.session.config && req.session.config.free_shipping_threshold) || 200000.0;
+  res.render('vehicles-catalog', {
+    title: 'Catálogo de Vehículos Certificados | AutoHub',
+    vehicles: filtered,
+    totalCount: filtered.length,
+    selectedFilters: { make, fuel, transmission, city, min_price, max_price, sort, search },
+    filterOptions: { makes, fuels, cities }
+  });
+});
 
+// 3. VEHICLE DETAIL VIEW (360° Gallery, 150-pt Inspection, Legal Report, Finance Calculator, Reservation)
+app.get('/vehiculos/:id', (req, res) => {
+  const vehicle = INITIAL_VEHICLES.find(v => v.id === req.params.id || v.slug === req.params.id);
+  if (!vehicle) {
+    req.session.flash = { type: 'error', message: 'Vehículo no encontrado en inventario.' };
+    return res.redirect('/vehiculos');
+  }
+
+  const relatedVehicles = INITIAL_VEHICLES.filter(v => v.id !== vehicle.id).slice(0, 3);
+
+  res.render('vehicle-detail', {
+    title: `${vehicle.title} (${vehicle.year}) | AutoHub Certificado`,
+    vehicle,
+    relatedVehicles
+  });
+});
+
+// 4. VEHICLE RESERVATION SUBMISSION
+app.post('/vehiculos/reservar', (req, res) => {
+  const { vehicle_id, customer_name, customer_email, customer_phone, customer_city, payment_method, notes } = req.body;
+
+  // Enforce authentication
+  if (!req.session.user) {
+    req.session.flash = { 
+      type: 'error', 
+      message: 'Para continuar con la reserva o compra de tu vehículo debes registrarte si no estás registrado o iniciar sesión si ya tienes cuenta.' 
+    };
+    return res.redirect(`/login?redirect=${encodeURIComponent('/vehiculos/' + (vehicle_id || ''))}`);
+  }
+
+  const vehicle = INITIAL_VEHICLES.find(v => v.id === vehicle_id);
+
+  if (!vehicle) {
+    req.session.flash = { type: 'error', message: 'No se pudo procesar la reserva.' };
+    return res.redirect('/vehiculos');
+  }
+
+  const reservationId = 'RES-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+  const paymentDetails = extractPaymentDetails(req.body);
+
+  const reservation = {
+    id: reservationId,
+    vehicle,
+    customer: {
+      name: customer_name,
+      email: customer_email,
+      phone: customer_phone,
+      city: customer_city,
+      notes: notes || 'Sin notas adicionales'
+    },
+    deposit_amount_usd: 500,
+    deposit_amount_cop: 2000000,
+    payment_method: paymentDetails.type,
+    payment_details: paymentDetails,
+    date: new Date().toISOString().replace('T', ' ').substring(0, 19),
+    status: 'Confirmada / Auto Apartado por 72h'
+  };
+
+  req.session.reservations.push(reservation);
+
+  res.render('vehicle-receipt', {
+    title: `Reserva #${reservationId} Confirmada | AutoHub`,
+    reservation
+  });
+});
+
+// 5. AUTO PARTS CATALOG (Strict System Parts & VIN Compatibility Search)
+app.get('/autopartes', (req, res) => {
+  let { category, brand, search, car_make, garage_fit_only } = req.query;
+  const currentGarage = req.session.garageVehicle;
+
+  // 1. Normalize input parameters safely
+  let rawSearch = '';
+  if (Array.isArray(search)) {
+    rawSearch = search.map(s => (s || '').trim()).filter(Boolean).join(' ');
+  } else if (typeof search === 'string') {
+    rawSearch = search.trim();
+  }
+
+  let selectedMake = '';
+  if (Array.isArray(car_make)) {
+    selectedMake = car_make.filter(Boolean)[0] || '';
+  } else if (typeof car_make === 'string') {
+    selectedMake = car_make.trim();
+  }
+
+  let selectedCategory = '';
+  if (Array.isArray(category)) {
+    selectedCategory = category.filter(Boolean)[0] || '';
+  } else if (typeof category === 'string') {
+    selectedCategory = category.trim();
+  }
+
+  let selectedBrand = '';
+  if (Array.isArray(brand)) {
+    selectedBrand = brand.filter(Boolean)[0] || '';
+  } else if (typeof brand === 'string') {
+    selectedBrand = brand.trim();
+  }
+
+  // 2. Resolve VIN / Plate / WMI from rawSearch if applicable
+  const detectedVehicle = resolveVehicleFromVINorSearch(rawSearch);
+
+  // 3. Strict filtering on existing INITIAL_PARTS system inventory ONLY
+  let filtered = [...INITIAL_PARTS];
+
+  // If a VIN / Vehicle is detected, filter parts compatible with that vehicle make (and model if specific)
+  if (detectedVehicle) {
+    filtered = filtered.filter(part => 
+      part.compatible_vehicles.some(cv => {
+        const matchMake = cv.make.toLowerCase() === detectedVehicle.make.toLowerCase();
+        if (!detectedVehicle.model) return matchMake;
+        const cvModel = cv.model.toLowerCase();
+        const detModel = detectedVehicle.model.toLowerCase();
+        return matchMake && (cvModel.includes(detModel) || detModel.includes(cvModel));
+      })
+    );
+  } else if (rawSearch) {
+    const q = rawSearch.toLowerCase();
+    filtered = filtered.filter(p => 
+      p.name.toLowerCase().includes(q) ||
+      p.sku.toLowerCase().includes(q) ||
+      p.oem_number.toLowerCase().includes(q) ||
+      p.brand.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      p.compatible_vehicles.some(cv => 
+        cv.make.toLowerCase().includes(q) || 
+        cv.model.toLowerCase().includes(q) ||
+        (cv.engine && cv.engine.toLowerCase().includes(q))
+      )
+    );
+  }
+
+  // Filter by Vehicle Make (car_make)
+  if (selectedMake && selectedMake !== 'all') {
+    filtered = filtered.filter(p => 
+      p.compatible_vehicles.some(cv => cv.make.toLowerCase() === selectedMake.toLowerCase())
+    );
+  }
+
+  // Filter by Category
+  if (selectedCategory && selectedCategory !== 'all') {
+    filtered = filtered.filter(p => p.category.toLowerCase() === selectedCategory.toLowerCase());
+  }
+
+  // Filter by Part Brand
+  if (selectedBrand && selectedBrand !== 'all') {
+    filtered = filtered.filter(p => p.brand.toLowerCase() === selectedBrand.toLowerCase());
+  }
+
+  // Evaluate garage compatibility for current active garage vehicle
+  filtered = filtered.map(part => {
+    const isCompatible = part.compatible_vehicles.some(
+      cv => cv.make.toLowerCase() === currentGarage.make.toLowerCase() &&
+            cv.model.toLowerCase() === currentGarage.model.toLowerCase()
+    );
+    return { ...part, isGarageCompatible: isCompatible };
+  });
+
+  if (garage_fit_only === '1') {
+    filtered = filtered.filter(p => p.isGarageCompatible);
+  }
+
+  const categories = [...new Set(INITIAL_PARTS.map(p => p.category))];
+  const brands = [...new Set(INITIAL_PARTS.map(p => p.brand))].sort();
+  const allCarMakes = [...new Set(INITIAL_PARTS.flatMap(p => p.compatible_vehicles.map(cv => cv.make)))].sort();
+
+  res.render('parts-catalog', {
+    title: detectedVehicle 
+      ? `Repuestos Compatibles para ${detectedVehicle.make} ${detectedVehicle.model || ''} | AutoHub`
+      : 'Catálogo de Autopartes & Repuestos OEM | AutoHub',
+    parts: filtered,
+    totalCount: filtered.length,
+    selectedFilters: { 
+      category: selectedCategory, 
+      brand: selectedBrand, 
+      search: rawSearch, 
+      car_make: selectedMake, 
+      garage_fit_only 
+    },
+    categories,
+    brands,
+    allCarMakes,
+    currentGarage,
+    detectedVehicle
+  });
+});
+
+// 6. AUTO PART DETAIL VIEW
+app.get('/autopartes/:id', (req, res) => {
+  const part = INITIAL_PARTS.find(p => p.id === req.params.id || p.sku === req.params.id);
+  if (!part) {
+    req.session.flash = { type: 'error', message: 'Pieza o repuesto no encontrado.' };
+    return res.redirect('/autopartes');
+  }
+
+  const currentGarage = req.session.garageVehicle;
+  const isCompatible = part.compatible_vehicles.some(
+    cv => cv.make.toLowerCase() === currentGarage.make.toLowerCase() &&
+          cv.model.toLowerCase() === currentGarage.model.toLowerCase()
+  );
+
+  const relatedParts = INITIAL_PARTS.filter(p => p.id !== part.id && p.category === part.category).slice(0, 3);
+
+  res.render('part-detail', {
+    title: `${part.name} - ${part.brand} | AutoHub`,
+    part,
+    isCompatible,
+    currentGarage,
+    relatedParts
+  });
+});
+
+// 7. VIRTUAL GARAJE & USER SETTINGS ACTION
+app.post('/api/garage/set', (req, res) => {
+  const { make, model, year, engine, plate } = req.body;
+  req.session.garageVehicle = {
+    make: make || 'Toyota',
+    model: model || 'RAV4',
+    year: Number(year) || 2021,
+    engine: engine || '2.5L Híbrido',
+    plate: plate ? plate.toUpperCase() : (req.session.garageVehicle ? req.session.garageVehicle.plate : 'KLU-842')
+  };
+
+  req.session.flash = {
+    type: 'success',
+    message: `🚗 Garaje virtual actualizado a: ${req.session.garageVehicle.make} ${req.session.garageVehicle.model} (${req.session.garageVehicle.year}). Compatibilidad activa en Pesos Colombianos ($ COP).`
+  };
+
+  res.redirect(req.get('Referrer') || '/autopartes');
+});
+
+// Full Configuration & Options Save Route
+app.post('/api/settings/save', (req, res) => {
+  const { 
+    make, model, year, engine, plate,
+    currency, defaultCity, autoFilterGarage, partnerInstallDefault, extendedWarrantyPrompt 
+  } = req.body;
+
+  if (make || model || year || engine) {
+    req.session.garageVehicle = {
+      make: make || (req.session.garageVehicle ? req.session.garageVehicle.make : 'Toyota'),
+      model: model || (req.session.garageVehicle ? req.session.garageVehicle.model : 'RAV4'),
+      year: Number(year) || (req.session.garageVehicle ? req.session.garageVehicle.year : 2021),
+      engine: engine || (req.session.garageVehicle ? req.session.garageVehicle.engine : '2.5L Híbrido'),
+      plate: plate ? plate.toUpperCase() : (req.session.garageVehicle ? req.session.garageVehicle.plate : 'KLU-842')
+    };
+  }
+
+  req.session.userSettings = {
+    currency: currency || 'COP',
+    defaultCity: defaultCity || 'Bogotá D.C.',
+    autoFilterGarage: autoFilterGarage === '1' || autoFilterGarage === 'true',
+    partnerInstallDefault: partnerInstallDefault === '1' || partnerInstallDefault === 'true',
+    extendedWarrantyPrompt: extendedWarrantyPrompt === '1' || extendedWarrantyPrompt === 'true'
+  };
+
+  req.session.flash = {
+    type: 'success',
+    message: `⚙️ Opciones y configuraciones guardadas exitosamente. Precios configurados en Peso Colombiano ($ COP) para ${req.session.userSettings.defaultCity}.`
+  };
+
+  res.redirect(req.get('Referrer') || '/');
+});
+
+// 8. INTERACTIVE VALUATION / VEHICLE APPRAISAL TOOL ("Vender mi Auto")
+app.get(['/tasador', '/vender'], (req, res) => {
+  res.render('appraisal', {
+    title: 'Tasa y Vende tu Auto en 2 Minutos | AutoHub Motors'
+  });
+});
+
+app.post('/api/tasador/calcular', (req, res) => {
+  const { plate, vin, make, model, year, mileage, condition, phone, email } = req.body;
+
+  // Simple realistic valuation algorithm based on year and mileage
+  const basePrices = {
+    'toyota': 32000,
+    'bmw': 55000,
+    'audi': 34000,
+    'mazda': 25000,
+    'chevrolet': 16000,
+    'ford': 42000,
+    'renault': 14000,
+    'volkswagen': 22000,
+    'otro': 20000
+  };
+
+  const selectedMake = (make || 'toyota').toLowerCase();
+  const base = basePrices[selectedMake] || 22000;
+  const currentYr = 2026;
+  const carYr = Number(year) || 2021;
+  const age = Math.max(0, currentYr - carYr);
+  const depreciationFactor = Math.pow(0.92, age); // 8% per year
+  const km = Number(mileage) || 40000;
+  const kmFactor = Math.max(0.75, 1 - (km / 250000) * 0.3);
+
+  let conditionFactor = 1.0;
+  if (condition === 'excelente') conditionFactor = 1.08;
+  else if (condition === 'regular') conditionFactor = 0.88;
+
+  const estimatedValueUSD = Math.round(base * depreciationFactor * kmFactor * conditionFactor);
+  const lowRangeUSD = Math.round(estimatedValueUSD * 0.94);
+  const highRangeUSD = Math.round(estimatedValueUSD * 1.06);
+
+  const lowRangeCOP = lowRangeUSD * 3950;
+  const highRangeCOP = highRangeUSD * 3950;
+
+  res.render('appraisal-result', {
+    title: `Resultado de Tasación para tu ${make} ${model} | AutoHub`,
+    valuation: {
+      plate: plate ? plate.toUpperCase() : 'NO-REGISTRADA',
+      vin: vin ? vin.toUpperCase() : 'PENDIENTE',
+      make: make || 'Vehículo',
+      model: model || 'N/A',
+      year: carYr,
+      mileage: km,
+      condition: condition || 'bueno',
+      lowUSD: lowRangeUSD,
+      highUSD: highRangeUSD,
+      lowCOP: lowRangeCOP,
+      highCOP: highRangeCOP,
+      instantOfferUSD: Math.round(lowRangeUSD * 0.96),
+      instantOfferCOP: Math.round(lowRangeCOP * 0.96),
+      phone,
+      email
+    }
+  });
+});
+
+// 9. SHOPPING CART FOR AUTO PARTS
+app.get('/carrito', (req, res) => {
+  const cart = req.session.cart || {};
   const items = [];
-  let subtotal = 0;
+  let subtotalCOP = 0;
+  let subtotalUSD = 0;
+  let totalWeightKg = 0;
 
-  for (const [productId, qty] of Object.entries(cartItems)) {
-    const product = products[productId];
-    if (product && qty > 0) {
-      const discount = Number(product.discount) || 0;
-      const unitPrice = Number(product.price) * (1 - discount / 100);
-      const totalItem = unitPrice * Number(qty);
-      subtotal += totalItem;
+  for (const partId in cart) {
+    const qty = cart[partId];
+    const part = INITIAL_PARTS.find(p => p.id === partId);
+    if (part && qty > 0) {
+      const itemTotalCOP = part.price_cop * qty;
+      const itemTotalUSD = part.price_usd * qty;
+      subtotalCOP += itemTotalCOP;
+      subtotalUSD += itemTotalUSD;
+      totalWeightKg += (part.weight_kg || 1) * qty;
 
       items.push({
-        product,
-        quantity: Number(qty),
-        unit_price: unitPrice,
-        total: totalItem
+        part,
+        quantity: qty,
+        totalCOP: itemTotalCOP,
+        totalUSD: itemTotalUSD
       });
     }
   }
 
-  // Handle Coupon Discount
-  let discountAmount = 0;
-  let freeShippingFromCoupon = false;
-  const coupon = req.session.activeCoupon;
+  // Shipping logic: Free over $200.000 COP, else $15.000 base + weight
+  const freeThresholdCOP = 200000;
+  const shippingCOP = subtotalCOP >= freeThresholdCOP || subtotalCOP === 0 ? 0 : Math.round(15000 + totalWeightKg * 2000);
+  const totalCOP = subtotalCOP + shippingCOP;
 
-  if (coupon && subtotal > 0) {
-    if (coupon.type === 'percent') {
-      discountAmount = subtotal * (coupon.value / 100);
-    } else if (coupon.type === 'fixed') {
-      discountAmount = Math.min(coupon.value, subtotal);
-    } else if (coupon.type === 'free_shipping') {
-      freeShippingFromCoupon = true;
-    }
-  }
-
-  const discountedSubtotal = Math.max(0, subtotal - discountAmount);
-
-  // Shipping logic
-  let shippingCost = 0;
-  const expressSurcharge = 12000.0;
-  if (subtotal > 0) {
-    if (freeShippingFromCoupon || subtotal >= freeThreshold) {
-      shippingCost = shippingType === 'express' ? expressSurcharge : 0.0;
-    } else {
-      shippingCost = shippingType === 'express' ? baseShipping + expressSurcharge : baseShipping;
-    }
-  }
-
-  const taxAmount = discountedSubtotal * (taxRate / 100);
-  const finalTotal = subtotal > 0 ? discountedSubtotal + taxAmount + shippingCost : 0;
-
-  const missingForFreeShipping = Math.max(0, freeThreshold - subtotal);
-  const freeShippingProgress = Math.min(100, Math.round((subtotal / freeThreshold) * 100));
-
-  return {
-    items,
-    subtotal,
-    discountAmount,
-    discountedSubtotal,
-    coupon,
-    tax: taxAmount,
-    shipping: shippingCost,
-    shippingType,
-    freeThreshold,
-    missingForFreeShipping,
-    freeShippingProgress,
-    final_total: finalTotal
-  };
-}
-
-// Controller Handlers
-const handleHome = (req, res) => {
-  const category = req.query.category || null;
-  const search = req.query.search || null;
-  const sort = req.query.sort || 'featured';
-  const minPrice = req.query.min_price || null;
-  const maxPrice = req.query.max_price || null;
-  const inStock = req.query.in_stock === '1' || req.query.in_stock === 'true';
-
-  const products = getProducts(req, { category, search, sort, minPrice, maxPrice, inStock });
-  const allProducts = Object.values(req.session.products || {});
-  
-  // Category counting
-  const categoryCounts = {};
-  allProducts.forEach(p => {
-    if (p.category) {
-      categoryCounts[p.category] = (categoryCounts[p.category] || 0) + 1;
-    }
-  });
-
-  const categories = Object.keys(categoryCounts);
-  const featuredProducts = allProducts.filter(p => p.badge || p.discount > 10).slice(0, 4);
-
-  res.render('catalog', {
-    title: req.session.config.store_name,
-    products,
-    featuredProducts,
-    categories,
-    categoryCounts,
-    totalProductsCount: allProducts.length,
-    search: search || '',
-    selectedCategory: category || '',
-    sort,
-    minPrice: minPrice || '',
-    maxPrice: maxPrice || '',
-    inStock
-  });
-};
-
-const handleProductDetail = (req, res) => {
-  const id = parseInt(req.query.id || req.params.id, 10);
-  const product = req.session.products[id];
-
-  if (!product) {
-    req.session.flash = { type: 'error', message: 'Producto no encontrado.' };
-    return res.redirect('/index.php');
-  }
-
-  const allProducts = Object.values(req.session.products || {});
-  const relatedProducts = allProducts
-    .filter(p => p.category === product.category && p.id !== product.id)
-    .slice(0, 4);
-
-  res.render('product-detail', {
-    title: `${product.name} - ${req.session.config.store_name}`,
-    product,
-    relatedProducts
-  });
-};
-
-const handleViewCart = (req, res) => {
-  const shippingType = req.query.shipping || 'standard';
-  const details = calculateCartTotals(req, shippingType);
   res.render('cart', {
-    title: `Carrito de Compras - ${req.session.config.store_name}`,
-    details
+    title: 'Carrito de Compras de Autopartes | AutoHub',
+    items,
+    subtotalCOP,
+    subtotalUSD,
+    shippingCOP,
+    totalCOP,
+    totalWeightKg
   });
-};
+});
 
-const handleAddToCart = (req, res) => {
-  const productId = parseInt(req.body.product_id, 10);
-  const quantity = parseInt(req.body.quantity || 1, 10);
+app.post('/api/cart/add', (req, res) => {
+  const { part_id, quantity } = req.body;
+  const qty = parseInt(quantity, 10) || 1;
 
-  if (productId && req.session.products[productId]) {
-    const currentQty = req.session.cart[productId] || 0;
-    const maxStock = req.session.products[productId].stock || 99;
-    const newQty = Math.min(currentQty + quantity, maxStock);
+  if (!req.session.cart) req.session.cart = {};
+  req.session.cart[part_id] = (req.session.cart[part_id] || 0) + qty;
 
-    req.session.cart[productId] = newQty;
-    req.session.flash = {
-      type: 'success',
-      message: `¡${req.session.products[productId].name} agregado al carrito con éxito!`
-    };
-  }
-
-  const returnUrl = req.body.return_url || '/index.php?action=cart';
-  res.redirect(returnUrl);
-};
-
-const handleUpdateCart = (req, res) => {
-  const productId = parseInt(req.body.product_id, 10);
-  const quantity = parseInt(req.body.quantity, 10);
-  if (productId) {
-    if (quantity <= 0) {
-      delete req.session.cart[productId];
-      req.session.flash = { type: 'info', message: 'Producto eliminado del carrito.' };
-    } else {
-      const maxStock = (req.session.products[productId] && req.session.products[productId].stock) || 99;
-      req.session.cart[productId] = Math.min(quantity, maxStock);
-      req.session.flash = { type: 'success', message: 'Cantidad actualizada.' };
-    }
-  }
-  res.redirect('/index.php?action=cart');
-};
-
-const handleRemoveFromCart = (req, res) => {
-  const productId = parseInt(req.query.id, 10);
-  if (productId && req.session.cart[productId]) {
-    delete req.session.cart[productId];
-    req.session.flash = { type: 'info', message: 'Producto eliminado del carrito.' };
-  }
-  res.redirect('/index.php?action=cart');
-};
-
-const handleApplyCoupon = (req, res) => {
-  const code = (req.body.coupon_code || '').trim().toUpperCase();
-  const coupons = req.session.coupons || defaultCoupons;
-
-  if (code && coupons[code]) {
-    req.session.activeCoupon = coupons[code];
-    req.session.flash = {
-      type: 'success',
-      message: `Cupón "${code}" aplicado exitosamente (${coupons[code].description}).`
-    };
-  } else {
-    req.session.flash = {
-      type: 'error',
-      message: `El cupón "${code}" no es válido o ha expirado.`
-    };
-  }
-
-  const redirectUrl = req.body.redirect_to === 'checkout' ? '/index.php?action=checkout' : '/index.php?action=cart';
-  res.redirect(redirectUrl);
-};
-
-const handleRemoveCoupon = (req, res) => {
-  req.session.activeCoupon = null;
-  req.session.flash = { type: 'info', message: 'Cupón de descuento removido.' };
-  const redirectUrl = req.query.redirect_to === 'checkout' ? '/index.php?action=checkout' : '/index.php?action=cart';
-  res.redirect(redirectUrl);
-};
-
-const handleToggleWishlist = (req, res) => {
-  const productId = parseInt(req.query.id || req.body.product_id, 10);
-  if (productId) {
-    const list = req.session.wishlist || [];
-    const index = list.indexOf(productId);
-    if (index > -1) {
-      list.splice(index, 1);
-      req.session.flash = { type: 'info', message: 'Producto removido de tu lista de favoritos.' };
-    } else {
-      list.push(productId);
-      req.session.flash = { type: 'success', message: '¡Producto guardado en tus favoritos!' };
-    }
-    req.session.wishlist = list;
-  }
-
-  const referer = req.headers.referer || '/index.php';
-  res.redirect(referer);
-};
-
-const handleWishlistView = (req, res) => {
-  const wishlistIds = req.session.wishlist || [];
-  const products = wishlistIds
-    .map(id => req.session.products[id])
-    .filter(Boolean);
-
-  res.render('wishlist', {
-    title: `Mis Favoritos - ${req.session.config.store_name}`,
-    products
-  });
-};
-
-const handleCheckout = (req, res) => {
-  const shippingType = req.query.shipping || req.body.shipping || 'standard';
-  const details = calculateCartTotals(req, shippingType);
-  if (!details.items.length) {
-    req.session.flash = { type: 'error', message: 'Tu carrito está vacío para proceder al pago.' };
-    return res.redirect('/index.php');
-  }
-  res.render('checkout', {
-    title: `Finalizar Compra - ${req.session.config.store_name}`,
-    details,
-    shippingType
-  });
-};
-
-const handleProcessCheckout = (req, res) => {
-  const shippingType = req.body.shipping_type || 'standard';
-  const details = calculateCartTotals(req, shippingType);
-
-  if (!details.items.length) {
-    return res.redirect('/index.php');
-  }
-
-  const paymentMethod = req.body.payment_method || 'Tarjeta de Crédito/Débito';
-
-  const customerData = {
-    name: `${req.body.name || ''} ${req.body.lastname || ''}`.trim(),
-    email: req.body.email || '',
-    phone: req.body.phone || '',
-    address: `${req.body.address || ''}, ${req.body.city || ''}, ${req.body.state || ''}, C.P. ${req.body.zip || ''}`,
-    notes: req.body.notes || ''
+  req.session.flash = {
+    type: 'success',
+    message: '✓ Producto añadido exitosamente al carrito.'
   };
+
+  res.redirect('/carrito');
+});
+
+app.post('/api/cart/update', (req, res) => {
+  const { part_id, quantity } = req.body;
+  const qty = parseInt(quantity, 10);
+
+  if (req.session.cart && req.session.cart[part_id] !== undefined) {
+    if (qty <= 0) {
+      delete req.session.cart[part_id];
+    } else {
+      req.session.cart[part_id] = qty;
+    }
+  }
+
+  res.redirect('/carrito');
+});
+
+app.post('/api/cart/remove', (req, res) => {
+  const { part_id } = req.body;
+  if (req.session.cart && req.session.cart[part_id]) {
+    delete req.session.cart[part_id];
+  }
+  res.redirect('/carrito');
+});
+
+// 10. CHECKOUT FOR PARTS
+app.get('/checkout', (req, res) => {
+  const cart = req.session.cart || {};
+  const items = [];
+  let subtotalCOP = 0;
+
+  for (const partId in cart) {
+    const qty = cart[partId];
+    const part = INITIAL_PARTS.find(p => p.id === partId);
+    if (part && qty > 0) {
+      const itemTotalCOP = part.price_cop * qty;
+      subtotalCOP += itemTotalCOP;
+      items.push({ part, quantity: qty, totalCOP: itemTotalCOP });
+    }
+  }
+
+  if (items.length === 0) {
+    req.session.flash = { type: 'error', message: 'Tu carrito está vacío.' };
+    return res.redirect('/autopartes');
+  }
+
+  const shippingCOP = subtotalCOP >= 200000 ? 0 : 18000;
+  const totalCOP = subtotalCOP + shippingCOP;
+
+  res.render('checkout', {
+    title: 'Finalizar Compra Segura de Autopartes | AutoHub',
+    items,
+    subtotalCOP,
+    shippingCOP,
+    totalCOP
+  });
+});
+
+app.post('/api/checkout/process', (req, res) => {
+  const { 
+    first_name, 
+    last_name, 
+    email, 
+    phone, 
+    address, 
+    city, 
+    department, 
+    payment_method, 
+    install_in_partner_shop,
+    direct_part_id,
+    direct_quantity
+  } = req.body;
+
+  const items = [];
+  let subtotalCOP = 0;
+
+  if (direct_part_id) {
+    // Direct buy without cart
+    const qty = parseInt(direct_quantity, 10) || 1;
+    const part = INITIAL_PARTS.find(p => p.id === direct_part_id);
+    if (part) {
+      const itemTotalCOP = part.price_cop * qty;
+      subtotalCOP = itemTotalCOP;
+      items.push({ part, quantity: qty, totalCOP: itemTotalCOP });
+    }
+  } else {
+    // Standard cart checkout
+    const cart = req.session.cart || {};
+    for (const partId in cart) {
+      const qty = cart[partId];
+      const part = INITIAL_PARTS.find(p => p.id === partId);
+      if (part && qty > 0) {
+        const itemTotalCOP = part.price_cop * qty;
+        subtotalCOP += itemTotalCOP;
+        items.push({ part, quantity: qty, totalCOP: itemTotalCOP });
+      }
+    }
+  }
+
+  // Fallback if no items
+  if (items.length === 0 && INITIAL_PARTS.length > 0) {
+    const fallbackPart = INITIAL_PARTS[0];
+    items.push({ part: fallbackPart, quantity: 1, totalCOP: fallbackPart.price_cop });
+    subtotalCOP = fallbackPart.price_cop;
+  }
 
   const orderId = 'ORD-' + Math.random().toString(36).substring(2, 9).toUpperCase();
-  const trackingNumber = 'COL-' + Math.floor(10000000 + Math.random() * 90000000);
-  const now = new Date();
-  const dateStr = now.toISOString().replace('T', ' ').substring(0, 19);
-
-  // Reduce inventory stock
-  details.items.forEach(item => {
-    if (req.session.products[item.product.id]) {
-      const curStock = req.session.products[item.product.id].stock || 10;
-      req.session.products[item.product.id].stock = Math.max(0, curStock - item.quantity);
-      defaultProducts[item.product.id].stock = req.session.products[item.product.id].stock;
-    }
-  });
+  const trackingNumber = 'AUTOHUB-COL-' + Math.floor(10000000 + Math.random() * 90000000);
+  const shippingCOP = subtotalCOP >= 200000 ? 0 : 18000;
+  const totalCOP = subtotalCOP + shippingCOP;
+  const paymentDetails = extractPaymentDetails(req.body);
 
   const order = {
     id: orderId,
-    date: dateStr,
-    status: 'Confirmado',
     trackingNumber,
-    paymentMethod,
-    shippingMethod: shippingType === 'express' ? 'Express Prioritario (24-48 hrs)' : 'Estándar Seguro (3-5 días)',
-    customer: customerData,
-    items: details.items,
-    subtotal: details.subtotal,
-    discountAmount: details.discountAmount,
-    couponCode: details.coupon ? details.coupon.code : null,
-    tax: details.tax,
-    shipping: details.shipping,
-    total: details.final_total
+    items,
+    subtotal: subtotalCOP,
+    shipping: shippingCOP,
+    total: totalCOP,
+    customer: {
+      name: `${first_name} ${last_name}`,
+      email,
+      phone,
+      address: `${address}, ${city} - ${department}`,
+      partnerShopInstall: install_in_partner_shop === '1'
+    },
+    paymentMethod: paymentDetails.type,
+    payment_details: paymentDetails,
+    date: new Date().toISOString().replace('T', ' ').substring(0, 19),
+    status: 'Preparando Despacho'
   };
 
-  req.session.orders[orderId] = order;
-  globalOrders[orderId] = order;
-  
-  // Clear cart and active coupon
-  req.session.cart = {};
-  req.session.activeCoupon = null;
-
-  req.session.flash = {
-    type: 'success',
-    message: `¡Felicitaciones! Tu orden #${order.id} fue procesada con éxito.`
-  };
-
-  res.redirect(`/index.php?action=receipt&id=${order.id}`);
-};
-
-const handleReceipt = (req, res) => {
-  const id = req.query.id || '';
-  const order = req.session.orders[id] || globalOrders[id];
-
-  if (!order) {
-    req.session.flash = { type: 'error', message: 'Orden no encontrada.' };
-    return res.redirect('/index.php');
+  req.session.orders.push(order);
+  if (!direct_part_id) {
+    req.session.cart = {}; // Empty cart only on cart checkout
   }
 
   res.render('receipt', {
-    title: `Recibo de Compra #${order.id} - ${req.session.config.store_name}`,
+    title: `Recibo de Compra #${orderId} | AutoHub`,
     order
   });
-};
+});
 
-const handleOrders = (req, res) => {
-  const orders = Object.values(req.session.orders || {});
-  orders.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  res.render('orders', {
-    title: `Historial de Compras - ${req.session.config.store_name}`,
-    orders
+// 11. TECHNICAL ARCHITECTURE & DATABASE DELIVERABLE VIEWER
+app.get('/arquitectura', (req, res) => {
+  res.render('architecture-docs', {
+    title: 'Arquitectura de Software, Diagramas & Esquema de Base de Datos | AutoHub'
   });
-};
+});
 
-const handleAdmin = (req, res) => {
-  const products = Object.values(req.session.products || {});
-  const orders = Object.values(req.session.orders || {});
-  const coupons = Object.values(req.session.coupons || {});
-  const editId = parseInt(req.query.edit, 10);
-  const editProduct = editId ? req.session.products[editId] || null : null;
+// -------------------------------------------------------------
+// 12. AUTHENTICATION & USER MANAGEMENT ROUTES
+// -------------------------------------------------------------
 
-  // Calculate Metrics
-  const totalRevenue = orders.reduce((sum, ord) => sum + (Number(ord.total) || 0), 0);
-  const totalOrders = orders.length;
-  const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-  const lowStockProducts = products.filter(p => (p.stock || 0) <= 5);
+// A. Login View
+app.get(['/login', '/iniciar-sesion'], (req, res) => {
+  const mode = req.query.mode || 'login';
+  const returnUrl = req.query.redirect || req.query.returnUrl || '/';
 
-  res.render('admin', {
-    title: `Panel de Control Administrativo - ${req.session.config.store_name}`,
-    products,
-    orders,
-    coupons,
-    editProduct,
-    config: req.session.config,
-    metrics: {
-      totalRevenue,
-      totalOrders,
-      averageTicket,
-      lowStockCount: lowStockProducts.length,
-      totalProducts: products.length
-    }
+  // If already logged in, redirect to profile or returnUrl
+  if (req.session.user && mode === 'login') {
+    return res.redirect(returnUrl !== '/' ? returnUrl : '/perfil');
+  }
+
+  res.render('login', {
+    title: 'Iniciar Sesión, Registro y Recuperar Contraseña | AutoHub Colombia',
+    mode,
+    returnUrl
   });
-};
+});
 
-const handleAdminSaveProduct = (req, res) => {
-  const data = req.body;
-  const existingId = parseInt(data.id, 10);
-
-  const productKeys = Object.keys(req.session.products || {}).map(Number);
-  const id = existingId || (productKeys.length > 0 ? Math.max(...productKeys) + 1 : 1);
-
-  const product = {
-    id,
-    name: data.name || '',
-    category: data.category || 'General',
-    price: parseFloat(data.price) || 0,
-    discount: parseFloat(data.discount) || 0,
-    stock: parseInt(data.stock, 10) || 10,
-    rating: parseFloat(data.rating) || 4.8,
-    reviewsCount: parseInt(data.reviewsCount, 10) || 1,
-    badge: data.badge ? data.badge.trim() : '',
-    description: data.description || '',
-    specs: data.specs || '',
-    image: data.image && data.image.trim() !== '' ? data.image.trim() : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80',
-    gallery: [
-      data.image && data.image.trim() !== '' ? data.image.trim() : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80'
-    ]
-  };
-
-  req.session.products[id] = product;
-  defaultProducts[id] = product;
-
-  req.session.flash = {
-    type: 'success',
-    message: existingId ? 'Producto actualizado correctamente.' : 'Nuevo producto creado con éxito.'
-  };
-
-  res.redirect('/index.php?action=admin');
-};
-
-const handleAdminDeleteProduct = (req, res) => {
-  const id = parseInt(req.query.id, 10);
-  if (id && req.session.products[id]) {
-    const name = req.session.products[id].name;
-    delete req.session.products[id];
-    delete defaultProducts[id];
-    req.session.flash = { type: 'info', message: `Producto "${name}" eliminado del catálogo.` };
+// B. Register View (Direct tab shortcut)
+app.get(['/registro', '/registrarse'], (req, res) => {
+  const returnUrl = req.query.redirect || req.query.returnUrl || '/';
+  if (req.session.user) {
+    return res.redirect('/perfil');
   }
-  res.redirect('/index.php?action=admin');
-};
 
-const handleAdminUpdateOrderStatus = (req, res) => {
-  const orderId = req.body.order_id;
-  const newStatus = req.body.status;
+  res.render('login', {
+    title: 'Crear Cuenta Nueva | AutoHub Motors & Parts',
+    mode: 'register',
+    returnUrl
+  });
+});
 
-  if (orderId && req.session.orders[orderId]) {
-    req.session.orders[orderId].status = newStatus;
-    if (globalOrders[orderId]) {
-      globalOrders[orderId].status = newStatus;
+// C. Password Recovery View (Direct tab shortcut)
+app.get(['/recuperar-password', '/recuperar', '/forgot-password'], (req, res) => {
+  res.render('login', {
+    title: 'Recuperar Contraseña | AutoHub Colombia',
+    mode: 'recovery',
+    returnUrl: '/'
+  });
+});
+
+// D. Process Login Form
+app.post('/api/auth/login', (req, res) => {
+  const { email, password, returnUrl } = req.body;
+  const targetUrl = returnUrl && returnUrl.startsWith('/') ? returnUrl : '/';
+
+  if (!email || !password) {
+    req.session.flash = { type: 'error', message: 'Por favor ingresa tu correo y contraseña.' };
+    return res.redirect(`/login?redirect=${encodeURIComponent(targetUrl)}`);
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const user = USERS_DB.find(u => u.email.toLowerCase() === cleanEmail && u.password === password.trim());
+
+  if (!user) {
+    req.session.flash = { type: 'error', message: 'Correo electrónico o contraseña incorrectos. Verifica tus datos o usa el acceso demo.' };
+    return res.redirect(`/login?redirect=${encodeURIComponent(targetUrl)}`);
+  }
+
+  // Set Session User
+  req.session.user = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    city: user.city,
+    department: user.department,
+    address: user.address,
+    role: user.role,
+    avatar: user.avatar,
+    garageVehicle: user.garageVehicle
+  };
+
+  // Sync session garage vehicle
+  if (user.garageVehicle) {
+    req.session.garageVehicle = user.garageVehicle;
+  }
+
+  req.session.flash = { 
+    type: 'success', 
+    message: `¡Bienvenido de nuevo, ${user.name}! Has ingresado correctamente a AutoHub.` 
+  };
+
+  res.redirect(targetUrl);
+});
+
+// E. Process Registration Form (Auto-login immediately)
+app.post('/api/auth/register', (req, res) => {
+  const { 
+    name, 
+    email, 
+    password, 
+    phone, 
+    city, 
+    garage_make, 
+    garage_model, 
+    garage_plate, 
+    returnUrl 
+  } = req.body;
+
+  const targetUrl = returnUrl && returnUrl.startsWith('/') ? returnUrl : '/';
+
+  if (!name || !email || !password) {
+    req.session.flash = { type: 'error', message: 'Nombre, correo y contraseña son obligatorios.' };
+    return res.redirect(`/registro?redirect=${encodeURIComponent(targetUrl)}`);
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const existingUser = USERS_DB.find(u => u.email.toLowerCase() === cleanEmail);
+
+  if (existingUser) {
+    req.session.flash = { type: 'error', message: 'Ya existe una cuenta con este correo. Por favor inicia sesión.' };
+    return res.redirect(`/login?redirect=${encodeURIComponent(targetUrl)}`);
+  }
+
+  // Create new user
+  const newUser = {
+    id: 'usr_' + Date.now(),
+    name: name.trim(),
+    email: cleanEmail,
+    password: password.trim(),
+    phone: phone ? phone.trim() : '+57 300 000 0000',
+    city: city || 'Bogotá D.C.',
+    department: 'Colombia',
+    address: '',
+    role: 'Cliente Verificado',
+    avatar: '🚗',
+    createdAt: new Date().toISOString().substring(0, 10),
+    garageVehicle: {
+      make: garage_make ? garage_make.trim() : 'Toyota',
+      model: garage_model ? garage_model.trim() : 'Corolla',
+      year: 2022,
+      engine: '2.0L Gasolina',
+      plate: garage_plate ? garage_plate.trim().toUpperCase() : 'ABC-123'
     }
-    req.session.flash = { type: 'success', message: `Estado de la orden ${orderId} actualizado a "${newStatus}".` };
-  }
-  res.redirect('/index.php?action=admin');
-};
-
-const handleAdminSaveCoupon = (req, res) => {
-  const code = (req.body.code || '').trim().toUpperCase();
-  const type = req.body.type || 'percent';
-  const value = parseFloat(req.body.value) || 10;
-  const description = req.body.description || `Descuento de ${value}`;
-
-  if (code) {
-    const coupon = { code, type, value, description };
-    req.session.coupons[code] = coupon;
-    defaultCoupons[code] = coupon;
-    req.session.flash = { type: 'success', message: `Cupón ${code} guardado con éxito.` };
-  }
-  res.redirect('/index.php?action=admin');
-};
-
-const handleAdminDeleteCoupon = (req, res) => {
-  const code = (req.query.code || '').trim().toUpperCase();
-  if (code && req.session.coupons[code]) {
-    delete req.session.coupons[code];
-    delete defaultCoupons[code];
-    req.session.flash = { type: 'info', message: `Cupón ${code} eliminado.` };
-  }
-  res.redirect('/index.php?action=admin');
-};
-
-const handleAdminSaveConfig = (req, res) => {
-  const config = {
-    store_name: req.body.store_name || 'Tienda Colombia',
-    tagline: req.body.tagline || 'Tu destino favorito para tecnología, audio, moda y hogar en Colombia',
-    tax: parseFloat(req.body.tax) || 19,
-    shipping: parseFloat(req.body.shipping) || 18000.0,
-    free_shipping_threshold: parseFloat(req.body.free_shipping_threshold) || 200000.0,
-    currency: req.body.currency || 'COP'
   };
 
-  req.session.config = config;
-  globalConfig = { ...config };
+  USERS_DB.push(newUser);
 
-  req.session.flash = { type: 'success', message: 'Configuración general actualizada.' };
-  res.redirect('/index.php?action=admin');
-};
+  // Auto Login Immediately
+  req.session.user = {
+    id: newUser.id,
+    name: newUser.name,
+    email: newUser.email,
+    phone: newUser.phone,
+    city: newUser.city,
+    department: newUser.department,
+    address: newUser.address,
+    role: newUser.role,
+    avatar: newUser.avatar,
+    garageVehicle: newUser.garageVehicle
+  };
 
-// Front Controller Router for PHP-compatible & REST actions
-app.all(['/', '/index.php'], (req, res) => {
-  const action = req.query.action || (req.body && req.body.action) || 'home';
+  req.session.garageVehicle = newUser.garageVehicle;
 
-  switch (action) {
-    case 'home':
-      return handleHome(req, res);
-    case 'product':
-      return handleProductDetail(req, res);
-    case 'cart':
-      return handleViewCart(req, res);
-    case 'add-to-cart':
-      return handleAddToCart(req, res);
-    case 'update-cart':
-      return handleUpdateCart(req, res);
-    case 'remove-from-cart':
-      return handleRemoveFromCart(req, res);
-    case 'apply-coupon':
-      return handleApplyCoupon(req, res);
-    case 'remove-coupon':
-      return handleRemoveCoupon(req, res);
-    case 'wishlist':
-      return handleWishlistView(req, res);
-    case 'toggle-wishlist':
-      return handleToggleWishlist(req, res);
-    case 'checkout':
-      return handleCheckout(req, res);
-    case 'process-checkout':
-      return handleProcessCheckout(req, res);
-    case 'receipt':
-      return handleReceipt(req, res);
-    case 'orders':
-      return handleOrders(req, res);
-    case 'admin':
-      return handleAdmin(req, res);
-    case 'admin-save-product':
-      return handleAdminSaveProduct(req, res);
-    case 'admin-delete-product':
-      return handleAdminDeleteProduct(req, res);
-    case 'admin-update-order':
-      return handleAdminUpdateOrderStatus(req, res);
-    case 'admin-save-coupon':
-      return handleAdminSaveCoupon(req, res);
-    case 'admin-delete-coupon':
-      return handleAdminDeleteCoupon(req, res);
-    case 'admin-save-config':
-      return handleAdminSaveConfig(req, res);
-    default:
-      res.status(404).send('<h1>404 - Página no encontrada</h1>');
+  req.session.flash = { 
+    type: 'success', 
+    message: `¡Registro exitoso! Bienvenido a AutoHub Colombia, ${newUser.name}. Ya tienes acceso total.` 
+  };
+
+  res.redirect(targetUrl);
+});
+
+// F. API: Request Password Recovery OTP Code
+app.post('/api/auth/request-recovery', (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ success: false, message: 'Correo electrónico requerido.' });
   }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const otpCode = 'AH-' + Math.floor(10000 + Math.random() * 90000);
+  OTP_STORE[cleanEmail] = {
+    code: otpCode,
+    expiresAt: Date.now() + 15 * 60 * 1000
+  };
+
+  return res.json({
+    success: true,
+    otpCode,
+    message: `Código de verificación generado para ${cleanEmail}.`
+  });
 });
 
-// REST-style route aliases
-app.get('/catalog', handleHome);
-app.get('/product/:id', handleProductDetail);
-app.get('/cart', handleViewCart);
-app.post('/cart/add', handleAddToCart);
-app.post('/cart/update', handleUpdateCart);
-app.get('/cart/remove', handleRemoveFromCart);
-app.post('/coupon/apply', handleApplyCoupon);
-app.get('/coupon/remove', handleRemoveCoupon);
-app.get('/wishlist', handleWishlistView);
-app.all('/wishlist/toggle', handleToggleWishlist);
-app.get('/checkout', handleCheckout);
-app.post('/checkout/process', handleProcessCheckout);
-app.get('/receipt', handleReceipt);
-app.get('/orders', handleOrders);
-app.get('/admin', handleAdmin);
-app.post('/admin/product/save', handleAdminSaveProduct);
-app.get('/admin/product/delete', handleAdminDeleteProduct);
-app.post('/admin/order/status', handleAdminUpdateOrderStatus);
-app.post('/admin/coupon/save', handleAdminSaveCoupon);
-app.get('/admin/coupon/delete', handleAdminDeleteCoupon);
-app.post('/admin/config/save', handleAdminSaveConfig);
+// G. Process Password Reset Form
+app.post('/api/auth/reset-password', (req, res) => {
+  const { recoveryEmail, otpCode, newPassword } = req.body;
 
-// 404 Handler
-app.use((req, res) => {
-  res.status(404).send('<h1>404 - Página no encontrada</h1><p><a href="/index.php">Volver a la tienda</a></p>');
+  if (!recoveryEmail || !newPassword) {
+    req.session.flash = { type: 'error', message: 'Datos incompletos para restablecer la contraseña.' };
+    return res.redirect('/recuperar-password');
+  }
+
+  const cleanEmail = recoveryEmail.trim().toLowerCase();
+  let user = USERS_DB.find(u => u.email.toLowerCase() === cleanEmail);
+
+  if (!user) {
+    // If not found in mock array, create account with new password so user is never blocked
+    user = {
+      id: 'usr_' + Date.now(),
+      name: cleanEmail.split('@')[0].toUpperCase(),
+      email: cleanEmail,
+      password: newPassword.trim(),
+      phone: '+57 310 987 6543',
+      city: 'Bogotá D.C.',
+      role: 'Cliente Verificado',
+      avatar: '👤',
+      garageVehicle: {
+        make: 'Toyota',
+        model: 'RAV4',
+        year: 2021,
+        engine: '2.5L Híbrido',
+        plate: 'KLU-842'
+      }
+    };
+    USERS_DB.push(user);
+  } else {
+    user.password = newPassword.trim();
+  }
+
+  // Clear OTP
+  delete OTP_STORE[cleanEmail];
+
+  // Auto Login upon reset
+  req.session.user = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    city: user.city,
+    role: user.role,
+    avatar: user.avatar,
+    garageVehicle: user.garageVehicle
+  };
+
+  req.session.flash = { 
+    type: 'success', 
+    message: '¡Contraseña actualizada exitosamente! Has iniciado sesión automáticamente en tu cuenta.' 
+  };
+
+  res.redirect('/perfil');
 });
 
-// 500 Error Handler
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).send(`<h1>Error del servidor:</h1> <p>${err.message}</p>`);
+// H. Logout
+app.get(['/logout', '/cerrar-sesion'], (req, res) => {
+  delete req.session.user;
+  req.session.flash = { type: 'success', message: 'Has cerrado sesión con éxito en AutoHub.' };
+  res.redirect('/');
 });
 
+// I. User Profile Dashboard
+app.get(['/perfil', '/mi-cuenta'], (req, res) => {
+  if (!req.session.user) {
+    req.session.flash = { type: 'error', message: 'Por favor inicia sesión para acceder a tu perfil.' };
+    return res.redirect('/login?redirect=/perfil');
+  }
+
+  res.render('profile', {
+    title: `Mi Cuenta AutoHub | ${req.session.user.name}`,
+    currentUser: req.session.user,
+    ordersCount: req.session.orders ? req.session.orders.length : 0
+  });
+});
+
+// J. Update Profile Information
+app.post('/api/profile/update', (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+
+  const { name, phone, city, address } = req.body;
+  
+  // Update in DB
+  const user = USERS_DB.find(u => u.id === req.session.user.id);
+  if (user) {
+    if (name) user.name = name.trim();
+    if (phone) user.phone = phone.trim();
+    if (city) user.city = city.trim();
+    if (address) user.address = address.trim();
+  }
+
+  // Update in Session
+  req.session.user.name = name ? name.trim() : req.session.user.name;
+  req.session.user.phone = phone ? phone.trim() : req.session.user.phone;
+  req.session.user.city = city ? city.trim() : req.session.user.city;
+  req.session.user.address = address ? address.trim() : req.session.user.address;
+
+  req.session.flash = { type: 'success', message: 'Datos personales actualizados correctamente.' };
+  res.redirect('/perfil');
+});
+
+// K. Update Profile Garage Vehicle
+app.post('/api/profile/garage', (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+
+  const { garage_make, garage_model, garage_year, garage_plate } = req.body;
+  const newGarage = {
+    make: garage_make ? garage_make.trim() : 'Toyota',
+    model: garage_model ? garage_model.trim() : 'Corolla',
+    year: garage_year ? parseInt(garage_year, 10) : 2022,
+    engine: 'Motor Optimizado',
+    plate: garage_plate ? garage_plate.trim().toUpperCase() : 'ABC-123'
+  };
+
+  // Update in DB & Session
+  const user = USERS_DB.find(u => u.id === req.session.user.id);
+  if (user) user.garageVehicle = newGarage;
+  req.session.user.garageVehicle = newGarage;
+  req.session.garageVehicle = newGarage;
+
+  req.session.flash = { type: 'success', message: 'Garaje virtual actualizado. Los repuestos se filtrarán para tu vehículo.' };
+  res.redirect('/perfil');
+});
+
+// L. Change Password from Profile
+app.post('/api/profile/change-password', (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+
+  const { currentPassword, newPassword } = req.body;
+  const user = USERS_DB.find(u => u.id === req.session.user.id);
+
+  if (user && user.password && user.password !== currentPassword.trim()) {
+    req.session.flash = { type: 'error', message: 'La contraseña actual no coincide.' };
+    return res.redirect('/perfil');
+  }
+
+  if (user) {
+    user.password = newPassword.trim();
+  }
+
+  req.session.flash = { type: 'success', message: 'Contraseña actualizada con éxito.' };
+  res.redirect('/perfil');
+});
+
+// Start Server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running at http://0.0.0.0:${PORT}`);
+  console.log(`AutoHub Motors & Parts server running at http://0.0.0.0:${PORT}`);
 });

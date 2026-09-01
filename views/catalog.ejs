@@ -1,304 +1,602 @@
 <%- include('header') %>
 
-<!-- Hero Promotional Banner -->
-<section class="hero-banner" id="heroBanner">
-    <div>
-        <div class="hero-tag">
-            <span>🔥</span> Super Ofertas Colombia 2026
-        </div>
-        <h1 class="hero-title">
-            Tecnología, Audio y Moda al <span>Mejor Precio en COP</span>
-        </h1>
-        <p class="hero-desc">
-            Descubre nuestra selección exclusiva con envíos express a toda Colombia, pagos 100% seguros con PSE, Nequi y Daviplata, y garantía directa de satisfacción.
-        </p>
-        <div class="hero-buttons">
-            <a href="#catalogo" class="btn btn-accent btn-lg" id="btnExplore">
-                🛍️ Explorar Catálogo
-            </a>
-            <div class="hero-coupon-pill">
-                <span>🏷️ Cupón 10% OFF:</span>
-                <strong class="btn-copy-code" data-code="BIENVENIDO10" title="Haz clic para copiar el cupón">BIENVENIDO10</strong>
+<!-- ================= HERO DUAL + BUSCADOR MULTI-MODAL ================= -->
+<section class="relative bg-slate-950 text-white pt-16 pb-28 overflow-hidden" id="heroSection">
+    <!-- Atmospheric glows -->
+    <div class="absolute -top-24 -left-24 w-96 h-96 bg-brand-600/25 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute top-1/2 -right-24 w-96 h-96 bg-accent-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header Copy -->
+        <div class="text-center max-w-3xl mx-auto mb-10">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-300 text-xs font-extrabold uppercase tracking-wider mb-4">
+                <span>⚡ Ecosistema Automotriz Integrado</span>
             </div>
+            <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12]">
+                Compra tu auto garantizado o encuentra el <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 via-sky-300 to-accent-400">repuesto exacto</span>.
+            </h1>
+            <p class="mt-4 text-base sm:text-lg text-slate-300">
+                Garantía de compatibilidad de repuestos por VIN y compraventa de vehículos certificados con peritaje mecánico de 150 puntos e historial legal 100% verificado.
+            </p>
         </div>
-    </div>
-    <div class="hero-visual">
-        <div class="hero-img-box">
-            <img 
-                src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80" 
-                alt="Sony WH-1000XM5 Oferta"
-                loading="lazy"
-            >
-        </div>
-    </div>
-</section>
 
-<!-- Trust & Value Pillars (4 distinct colorful cards) -->
-<section class="features-bar" aria-label="Beneficios de compra">
-    <div class="feature-item feature-blue">
-        <div class="feature-icon">🚚</div>
-        <div class="feature-text">
-            <h4>Envío Gratis Nacional</h4>
-            <p>En compras superiores a <%= formatMoney(config.free_shipping_threshold || 200000) %> COP</p>
-        </div>
-    </div>
-
-    <div class="feature-item feature-green">
-        <div class="feature-icon">🔒</div>
-        <div class="feature-text">
-            <h4>Pagos 100% Seguros</h4>
-            <p>PSE, Nequi, Daviplata y Tarjetas de Crédito</p>
-        </div>
-    </div>
-
-    <div class="feature-item feature-purple">
-        <div class="feature-icon">🛡️</div>
-        <div class="feature-text">
-            <h4>Garantía de 30 Días</h4>
-            <p>Devolución fácil y respaldo total en cada producto</p>
-        </div>
-    </div>
-
-    <div class="feature-item feature-amber">
-        <div class="feature-icon">⚡</div>
-        <div class="feature-text">
-            <h4>Entrega Express</h4>
-            <p>Despacho en 24 a 48 horas en principales ciudades</p>
-        </div>
-    </div>
-</section>
-
-<!-- Categories Navigation Bar -->
-<section id="catalogo" style="margin-bottom: 24px;">
-    <div class="categories-nav" role="tablist">
-        <a 
-            href="/index.php" 
-            class="category-pill <%= (!selectedCategory || selectedCategory === '') ? 'active' : '' %>"
-            id="catAll"
-        >
-            <span>✨ Todos los Productos</span>
-            <span class="category-count"><%= totalProductsCount %></span>
-        </a>
-
-        <% categories.forEach(cat => { %>
-            <a 
-                href="/index.php?category=<%= encodeURIComponent(cat) %><%= search ? `&search=${encodeURIComponent(search)}` : '' %>" 
-                class="category-pill <%= selectedCategory.toLowerCase() === cat.toLowerCase() ? 'active' : '' %>"
-            >
-                <span><%= cat %></span>
-                <span class="category-count"><%= categoryCounts[cat] || 0 %></span>
-            </a>
-        <% }); %>
-    </div>
-
-    <!-- Filter & Toolbar Card -->
-    <div class="filter-card">
-        <form action="/index.php" method="GET" class="filter-form" id="filterForm">
-            <% if (selectedCategory) { %>
-                <input type="hidden" name="category" value="<%= selectedCategory %>">
-            <% } %>
-            <% if (search) { %>
-                <input type="hidden" name="search" value="<%= search %>">
-            <% } %>
-
-            <!-- Sort By Select -->
-            <div class="filter-group">
-                <label for="sortSelect" class="filter-label">Ordenar por:</label>
-                <select name="sort" id="sortSelect" class="filter-select" onchange="this.form.submit()">
-                    <option value="featured" <%= sort === 'featured' ? 'selected' : '' %>>⭐ Destacados / Relevancia</option>
-                    <option value="price_asc" <%= sort === 'price_asc' ? 'selected' : '' %>>💵 Menor Precio a Mayor</option>
-                    <option value="price_desc" <%= sort === 'price_desc' ? 'selected' : '' %>>💎 Mayor Precio a Menor</option>
-                    <option value="discount" <%= sort === 'discount' ? 'selected' : '' %>>🔥 Mayores Descuentos</option>
-                    <option value="rating" <%= sort === 'rating' ? 'selected' : '' %>>🌟 Mejor Calificados</option>
-                    <option value="newest" <%= sort === 'newest' ? 'selected' : '' %>>✨ Más Recientes</option>
-                </select>
+        <!-- SEARCH CONTAINER WITH TABS -->
+        <div class="bg-white text-slate-900 rounded-3xl p-5 sm:p-7 shadow-2xl max-w-4xl mx-auto border border-slate-100 relative z-10">
+            
+            <!-- Tab Headers -->
+            <div class="flex border-b border-slate-200 pb-3 gap-3 sm:gap-8 overflow-x-auto">
+                <button 
+                    type="button" 
+                    onclick="switchHomeTab('parts')" 
+                    id="tabBtnParts" 
+                    class="flex items-center gap-2 pb-2.5 font-black text-sm sm:text-base border-b-2 border-brand-600 text-brand-600 transition whitespace-nowrap"
+                >
+                    <span>⚙️</span> Buscar Autopartes & VIN
+                </button>
+                <button 
+                    type="button" 
+                    onclick="switchHomeTab('cars')" 
+                    id="tabBtnCars" 
+                    class="flex items-center gap-2 pb-2.5 font-bold text-sm sm:text-base border-b-2 border-transparent text-slate-500 hover:text-slate-900 transition whitespace-nowrap"
+                >
+                    <span>🚗</span> Comprar Vehículo
+                </button>
+                <button 
+                    type="button" 
+                    onclick="switchHomeTab('sell')" 
+                    id="tabBtnSell" 
+                    class="flex items-center gap-2 pb-2.5 font-bold text-sm sm:text-base border-b-2 border-transparent text-slate-500 hover:text-slate-900 transition whitespace-nowrap"
+                >
+                    <span>💰</span> Tasar mi Auto
+                </button>
             </div>
 
-            <!-- Price Range Filter -->
-            <div class="filter-group">
-                <span class="filter-label">Rango de Precio ($ COP):</span>
-                <div class="price-inputs">
-                    <input 
-                        type="number" 
-                        name="min_price" 
-                        placeholder="Mín" 
-                        value="<%= minPrice %>" 
-                        class="filter-input"
-                        step="10000"
-                    >
-                    <span style="color: var(--text-muted);">-</span>
-                    <input 
-                        type="number" 
-                        name="max_price" 
-                        placeholder="Máx" 
-                        value="<%= maxPrice %>" 
-                        class="filter-input"
-                        step="10000"
-                    >
-                </div>
+            <!-- TAB 1: BUSCADOR DE AUTOPARTES POR VIN O FILTROS -->
+            <div id="tabContentParts" class="pt-5 space-y-4">
+                <form action="/autopartes" method="GET">
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">VIN / Placa / SKU</label>
+                            <input 
+                                type="text" 
+                                name="search" 
+                                placeholder="Ej: JTMB6RFV... o SKU" 
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-mono font-bold uppercase focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Categoría</label>
+                            <select name="category" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="all">Todas las categorías</option>
+                                <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+                                    <% categories.forEach(cat => { %>
+                                        <option value="<%= cat %>"><%= cat %></option>
+                                    <% }); %>
+                                <% } else { %>
+                                    <option value="Frenos & Discos">Frenos & Discos</option>
+                                    <option value="Suspensión & Dirección">Suspensión & Dirección</option>
+                                    <option value="Filtros & Mantenimiento">Filtros & Mantenimiento</option>
+                                    <option value="Electricidad & Sensores">Electricidad & Sensores</option>
+                                    <option value="Carrocería & Ópticas">Carrocería & Ópticas</option>
+                                    <option value="Motor & Turbos">Motor & Turbos</option>
+                                    <option value="Transmisión & Embrague">Transmisión & Embrague</option>
+                                    <option value="Escape & Rendimiento">Escape & Rendimiento</option>
+                                <% } %>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Marca de Auto</label>
+                            <select name="car_make" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="all">Cualquier marca</option>
+                                <% if (typeof carMakes !== 'undefined' && carMakes.length > 0) { %>
+                                    <% carMakes.forEach(make => { %>
+                                        <option value="<%= make %>"><%= make %></option>
+                                    <% }); %>
+                                <% } else { %>
+                                    <option value="Toyota">Toyota</option>
+                                    <option value="BMW">BMW</option>
+                                    <option value="Audi">Audi</option>
+                                    <option value="Porsche">Porsche</option>
+                                    <option value="Mazda">Mazda</option>
+                                    <option value="Chevrolet">Chevrolet</option>
+                                    <option value="Ford">Ford</option>
+                                    <option value="Renault">Renault</option>
+                                    <option value="Volkswagen">Volkswagen</option>
+                                    <option value="Hyundai">Hyundai</option>
+                                    <option value="Kia">Kia</option>
+                                    <option value="Jeep">Jeep</option>
+                                    <option value="Nissan">Nissan</option>
+                                    <option value="Mercedes-Benz">Mercedes-Benz</option>
+                                <% } %>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Filtro de Garaje</label>
+                            <label class="flex items-center h-10 px-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 text-[11px] text-emerald-900 font-bold cursor-pointer transition">
+                                <input type="checkbox" name="garage_fit_only" value="1" class="rounded text-emerald-600 focus:ring-emerald-500 mr-2">
+                                <span class="truncate">🚗 <%= garageVehicle.make %> <%= garageVehicle.model %></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row items-center gap-3">
+                        <button type="submit" class="w-full sm:flex-1 py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-brand-600/30 text-sm">
+                            <span>🔍</span> Buscar Repuestos Disponibles en Sistema
+                        </button>
+                    </div>
+
+                    <!-- Quick VIN examples available in system -->
+                    <div class="pt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
+                        <span class="font-bold text-slate-600">VINs de prueba en inventario:</span>
+                        <a href="/autopartes?search=JTMB6RFV4PD083921" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono transition">Toyota RAV4 (JTMB6RFV...)</a>
+                        <a href="/autopartes?search=WBS33AY08NFJ10293" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono transition">BMW M4 (WBS33AY0...)</a>
+                        <a href="/autopartes?search=WP0AB2A97PS289104" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono transition">Porsche 911 (WP0AB2A...)</a>
+                        <a href="/autopartes?search=WAUZZZF43MA092817" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono transition">Audi A4 (WAUZZZF...)</a>
+                    </div>
+                </form>
             </div>
 
-            <!-- In Stock Checkbox -->
-            <div class="filter-group">
-                <label class="checkbox-label">
-                    <input 
-                        type="checkbox" 
-                        name="in_stock" 
-                        value="1" 
-                        <%= inStock ? 'checked' : '' %>
-                        onchange="this.form.submit()"
-                    >
-                    <span>Solo en Stock</span>
-                </label>
-            </div>
-
-            <div class="filter-group">
-                <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
-                <% if (selectedCategory || search || sort !== 'featured' || minPrice || maxPrice || inStock) { %>
-                    <a href="/index.php" class="btn btn-secondary btn-sm" title="Limpiar todos los filtros">✕ Limpiar</a>
-                <% } %>
-            </div>
-        </form>
-    </div>
-</section>
-
-<!-- Active Search / Filter Status Banner -->
-<% if (search || selectedCategory) { %>
-    <div class="flex-between" style="margin-bottom: 24px; background: white; padding: 14px 20px; border-radius: 12px; border: 1px solid var(--border);">
-        <div>
-            Mostrando resultados para: 
-            <% if (selectedCategory) { %>
-                <strong style="color: var(--primary);"><%= selectedCategory %></strong>
-            <% } %>
-            <% if (search) { %>
-                <% if (selectedCategory) { %> en <% } %>
-                "<strong><%= search %></strong>"
-            <% } %>
-            (<%= products.length %> <%= products.length === 1 ? 'producto encontrado' : 'productos encontrados' %>)
-        </div>
-        <a href="/index.php" style="color: var(--primary); font-size: 0.88rem; font-weight: 700;">Ver todo el catálogo &rarr;</a>
-    </div>
-<% } %>
-
-<!-- Products Grid -->
-<% if (!products || products.length === 0) { %>
-    <div style="text-align: center; padding: 64px 20px; background: white; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 48px;">
-        <div style="font-size: 3.5rem; margin-bottom: 16px;">🔍</div>
-        <h3>No se encontraron productos con los criterios seleccionados</h3>
-        <p style="color: var(--text-muted); margin: 8px 0 24px;">Intenta ajustando el término de búsqueda o eliminando los filtros de precio y categoría.</p>
-        <a href="/index.php" class="btn btn-primary">Ver Todos los Productos</a>
-    </div>
-<% } else { %>
-    <section class="products-grid" aria-label="Catálogo de productos">
-        <% products.forEach(product => { %>
-            <% 
-                const discount = Number(product.discount) || 0;
-                const finalPrice = product.price * (1 - discount / 100);
-                const isWishlisted = wishlist && wishlist.includes(product.id);
-                const stock = product.stock !== undefined ? product.stock : 10;
-            %>
-            <article class="product-card" id="product-card-<%= product.id %>">
-                <!-- Badges -->
-                <div class="card-badges">
-                    <% if (discount > 0) { %>
-                        <span class="badge-tag badge-discount">-<%= discount %>% OFF</span>
-                    <% } %>
-                    <% if (product.badge) { %>
-                        <% 
-                            let badgeClass = 'badge-custom';
-                            if (product.badge === 'Más Vendido') badgeClass = 'badge-gold';
-                            else if (product.badge === 'Oferta') badgeClass = 'badge-discount';
-                            else if (product.badge === 'Nuevo') badgeClass = 'badge-emerald';
-                            else if (product.badge === 'Pro' || product.badge === 'Premium') badgeClass = 'badge-cyan';
-                        %>
-                        <span class="badge-tag <%= badgeClass %>"><%= product.badge %></span>
-                    <% } %>
-                </div>
-
-                <!-- Wishlist Toggle Button -->
-                <form action="/index.php?action=toggle-wishlist" method="POST" style="margin: 0;">
-                    <input type="hidden" name="product_id" value="<%= product.id %>">
-                    <button 
-                        type="submit" 
-                        class="btn-wishlist <%= isWishlisted ? 'active' : '' %>" 
-                        title="<%= isWishlisted ? 'Eliminar de favoritos' : 'Guardar en favoritos' %>"
-                    >
-                        <%= isWishlisted ? '❤️' : '🤍' %>
+            <!-- TAB 2: BUSCADOR DE VEHÍCULOS -->
+            <div id="tabContentCars" class="pt-5 space-y-4 hidden">
+                <form action="/vehiculos" method="GET">
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Marca</label>
+                            <select name="make" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="all">Todas las Marcas</option>
+                                <option value="BMW">BMW</option>
+                                <option value="Toyota">Toyota</option>
+                                <option value="Audi">Audi</option>
+                                <option value="Mazda">Mazda</option>
+                                <option value="Ford">Ford</option>
+                                <option value="Chevrolet">Chevrolet</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Combustible</label>
+                            <select name="fuel" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="all">Cualquiera (Gasolina / Híbrido)</option>
+                                <option value="Gasolina">Gasolina</option>
+                                <option value="Híbrido">Híbrido (Eco)</option>
+                                <option value="Eléctrico">100% Eléctrico</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Ubicación</label>
+                            <select name="city" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="all">Todas las ciudades</option>
+                                <option value="Bogotá D.C.">Bogotá D.C.</option>
+                                <option value="Medellín">Medellín</option>
+                                <option value="Cali">Cali</option>
+                                <option value="Bucaramanga">Bucaramanga</option>
+                                <option value="Barranquilla">Barranquilla</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Presupuesto Máximo</label>
+                            <select name="max_price" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="">Sin límite</option>
+                                <option value="60000000">Hasta $ 60.000.000 COP</option>
+                                <option value="120000000">Hasta $ 120.000.000 COP</option>
+                                <option value="200000000">Hasta $ 200.000.000 COP</option>
+                                <option value="350000000">Hasta $ 350.000.000 COP</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl transition flex items-center justify-center gap-2 shadow-lg text-sm">
+                        <span>🚗</span> Ver Inventario de Vehículos Certificados
                     </button>
                 </form>
+            </div>
 
-                <!-- Image link -->
-                <a href="/index.php?action=product&id=<%= product.id %>" class="card-img-wrapper">
-                    <img 
-                        src="<%= product.image %>" 
-                        alt="<%= product.name %>"
-                        loading="lazy"
-                        onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80'"
-                    >
-                </a>
+            <!-- TAB 3: TASADOR RÁPIDO -->
+            <div id="tabContentSell" class="pt-5 space-y-4 hidden">
+                <form action="/api/tasador/calcular" method="POST">
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Placa o VIN</label>
+                            <input 
+                                type="text" 
+                                name="plate" 
+                                placeholder="Ej: ABC-123" 
+                                required 
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-mono font-bold uppercase focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Marca & Modelo</label>
+                            <input 
+                                type="text" 
+                                name="make" 
+                                placeholder="Ej: Mazda CX-5" 
+                                required 
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Año</label>
+                            <select name="year" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                                <option value="2024">2024</option>
+                                <option value="2023">2023</option>
+                                <option value="2022">2022</option>
+                                <option value="2021" selected>2021</option>
+                                <option value="2020">2020</option>
+                                <option value="2019">2019</option>
+                                <option value="2018">2018</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Kilometraje</label>
+                            <input 
+                                type="number" 
+                                name="mileage" 
+                                placeholder="Ej: 35000" 
+                                value="35000" 
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                            >
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-3.5 bg-accent-500 hover:bg-accent-600 text-white font-extrabold rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-accent-500/30 text-sm">
+                        <span>📊</span> Calcular Valor de Mercado en Pesos Colombianos ($ COP)
+                    </button>
+                </form>
+            </div>
 
-                <!-- Card Content -->
-                <div class="card-body">
-                    <div class="card-category"><%= product.category %></div>
-                    
-                    <a href="/index.php?action=product&id=<%= product.id %>">
-                        <h3 class="card-title"><%= product.name %></h3>
-                    </a>
+        </div>
 
-                    <!-- Rating -->
-                    <div class="card-rating">
-                        <span class="stars">★★★★★</span>
-                        <span><%= Number(product.rating || 4.8).toFixed(1) %></span>
-                        <span style="color: var(--text-light); font-size: 0.78rem;">(<%= product.reviewsCount || 25 %>)</span>
+        <!-- 4 Key Value Pillars -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 text-slate-300">
+            <div class="flex items-center gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+                <span class="text-3xl">🛡️</span>
+                <div>
+                    <h4 class="font-bold text-xs text-white">150 Puntos Peritaje</h4>
+                    <p class="text-[11px] text-slate-400">Inspección técnica certificada</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+                <span class="text-3xl">🇨🇴</span>
+                <div>
+                    <h4 class="font-bold text-xs text-white">Moneda $ COP</h4>
+                    <p class="text-[11px] text-slate-400">Precios transparentes en Colombia</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+                <span class="text-3xl">🚗</span>
+                <div>
+                    <h4 class="font-bold text-xs text-white">Garaje Virtual Fitment</h4>
+                    <p class="text-[11px] text-slate-400">Piezas con match 100% seguro</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+                <span class="text-3xl">⚡</span>
+                <div>
+                    <h4 class="font-bold text-xs text-white">Reserva Online</h4>
+                    <p class="text-[11px] text-slate-400">Aparta con $ 2.000.000 COP</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ================= SECCIÓN 1: VEHÍCULOS CERTIFICADOS ================= -->
+<section class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" id="featuredVehicles">
+    <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+        <div>
+            <span class="text-brand-600 font-extrabold text-xs uppercase tracking-wider">Flota con Peritaje & Reporte Legal</span>
+            <h2 class="font-display text-3xl sm:text-4xl font-black text-slate-900 mt-1">Vehículos Certificados Destacados</h2>
+            <p class="text-slate-500 text-sm mt-1.5">Cada auto cuenta con certificado de no siniestro, garantía de 1 año y peritaje mecánico visible.</p>
+        </div>
+        <a href="/vehiculos" class="px-5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-xs font-extrabold transition flex items-center gap-2 shadow-sm self-start md:self-auto">
+            Ver Todos los <%= totalVehicles %> Vehículos &rarr;
+        </a>
+    </div>
+
+    <!-- Vehicles Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <% featuredVehicles.forEach(vehicle => { %>
+            <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+                <div>
+                    <!-- Image Card with Badges -->
+                    <div class="relative h-64 overflow-hidden bg-slate-100">
+                        <img 
+                            src="<%= vehicle.image %>" 
+                            alt="<%= vehicle.title %>" 
+                            class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                            loading="lazy"
+                        >
+                        <div class="absolute top-3.5 left-3.5 flex flex-wrap gap-1.5">
+                            <span class="bg-emerald-600 text-white text-[11px] font-black px-2.5 py-1 rounded-lg shadow-md flex items-center gap-1">
+                                <span>★</span> <%= vehicle.inspection_score %>/10 Certificado
+                            </span>
+                            <span class="bg-slate-900/85 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">
+                                🔄 360° View
+                            </span>
+                        </div>
+                        <span class="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md text-slate-800 text-[11px] font-bold px-2.5 py-1 rounded-lg shadow">
+                            📍 <%= vehicle.city %>
+                        </span>
                     </div>
 
-                    <!-- Description excerpt -->
-                    <p class="card-desc"><%= product.description %></p>
-
-                    <!-- Price -->
-                    <div class="card-price-row">
-                        <span class="price-main"><%= formatMoney(finalPrice) %></span>
-                        <% if (discount > 0) { %>
-                            <span class="price-old"><%= formatMoney(product.price) %></span>
-                            <span class="price-saving">Ahorras <%= formatMoney(product.price - finalPrice) %></span>
-                        <% } %>
-                    </div>
-
-                    <!-- Stock Status -->
-                    <div class="card-stock">
-                        <% if (stock <= 0) { %>
-                            <span class="stock-out">● Agotado</span>
-                        <% } else if (stock <= 5) { %>
-                            <span class="stock-low">⚠️ ¡Últimas <%= stock %> unidades disponibles!</span>
-                        <% } else { %>
-                            <span class="stock-in">✓ En Stock (<%= stock %> unid.)</span>
-                        <% } %>
-                    </div>
-
-                    <!-- Actions -->
-                    <div class="card-actions">
-                        <% if (stock > 0) { %>
-                            <form action="/index.php?action=add-to-cart" method="POST" style="margin: 0; display: contents;">
-                                <input type="hidden" name="product_id" value="<%= product.id %>">
-                                <input type="hidden" name="quantity" value="1">
-                                <input type="hidden" name="return_url" value="/index.php?action=cart">
-                                <button type="submit" class="btn btn-primary btn-block">
-                                    🛒 Comprar Ahora
-                                </button>
-                            </form>
-                        <% } else { %>
-                            <button type="button" class="btn btn-secondary btn-block" disabled style="opacity: 0.6; cursor: not-allowed;">
-                                Agotado
-                            </button>
-                        <% } %>
-                        <a href="/index.php?action=product&id=<%= product.id %>" class="btn btn-secondary" title="Ver ficha técnica y detalles">
-                            👁️
-                        </a>
+                    <!-- Card Body -->
+                    <div class="p-6">
+                        <div class="flex items-center justify-between text-xs font-semibold text-slate-400 mb-1">
+                            <span><%= vehicle.year %> • <%= vehicle.fuel %> • <%= vehicle.transmission.split(' ')[0] %></span>
+                            <span class="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded">
+                                <%= vehicle.legal_report.single_owner ? 'Único Dueño' : '2 Dueños' %>
+                            </span>
+                        </div>
+                        <h3 class="text-lg font-black text-slate-900 group-hover:text-brand-600 transition line-clamp-1">
+                            <a href="/vehiculos/<%= vehicle.id %>"><%= vehicle.title %></a>
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-1"><%= vehicle.engine %> • <%= vehicle.mileage_km.toLocaleString('es-CO') %> km</p>
+                        
+                        <!-- Mini Specs Pill Matrix -->
+                        <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-600">
+                            <div class="bg-slate-50 p-2 rounded-xl text-center">
+                                <span class="block text-slate-400 text-[10px]">Potencia</span>
+                                <span class="font-bold text-slate-800"><%= vehicle.horsepower %> HP</span>
+                            </div>
+                            <div class="bg-slate-50 p-2 rounded-xl text-center">
+                                <span class="block text-slate-400 text-[10px]">Tracción</span>
+                                <span class="font-bold text-slate-800"><%= vehicle.drivetrain.split(' ')[0] %></span>
+                            </div>
+                            <div class="bg-slate-50 p-2 rounded-xl text-center">
+                                <span class="block text-slate-400 text-[10px]">Garantía</span>
+                                <span class="font-bold text-emerald-600">1 Año</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </article>
+
+                <!-- Card Footer Price & Actions -->
+                <div class="p-6 pt-0">
+                    <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] text-slate-400 block font-bold uppercase">Precio Contado</span>
+                            <span class="text-xl font-black text-slate-900"><%= formatCOP(vehicle.price_cop) %></span>
+                            <span class="text-[10px] text-slate-400 block font-mono"><%= formatUSD(vehicle.price_usd) %> ref</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a 
+                                href="/vehiculos/<%= vehicle.id %>" 
+                                class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold transition shadow-md shadow-brand-600/20"
+                            >
+                                Ver 360° &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         <% }); %>
-    </section>
-<% } %>
+    </div>
+</section>
+
+<!-- ================= SECCIÓN 2: AUTOPARTES & GARAJE VIRTUAL ================= -->
+<section class="py-20 bg-slate-900 text-white" id="featuredParts">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+            <div>
+                <span class="text-accent-400 font-extrabold text-xs uppercase tracking-wider">Catálogo de Repuestos & Fitment Matrix</span>
+                <h2 class="font-display text-3xl sm:text-4xl font-black text-white mt-1">Autopartes con Compatibilidad Garantizada</h2>
+                <p class="text-slate-400 text-sm mt-1.5">
+                    Validación instantánea contra tu <strong class="text-emerald-400"><%= garageVehicle.make %> <%= garageVehicle.model %> (<%= garageVehicle.year %>)</strong>.
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="openGarageModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 transition">
+                    🚗 Cambiar Vehículo de Mi Garaje
+                </button>
+                <a href="/autopartes" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-bold text-white transition">
+                    Ver Catálogo &rarr;
+                </a>
+            </div>
+        </div>
+
+        <!-- Categorías con Iconos -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-12">
+            <a href="/autopartes?category=Frenos+%26+Discos" class="bg-slate-800/80 hover:bg-brand-600 p-5 rounded-2xl border border-slate-700 transition duration-300 text-center group">
+                <div class="text-3xl mb-2 group-hover:scale-110 transition">🛑</div>
+                <span class="font-bold text-xs block text-slate-200 group-hover:text-white">Frenos & Discos</span>
+                <span class="text-[10px] text-slate-400 group-hover:text-brand-100">Cerámicos OEM</span>
+            </a>
+            <a href="/autopartes?category=Suspensión+%26+Dirección" class="bg-slate-800/80 hover:bg-brand-600 p-5 rounded-2xl border border-slate-700 transition duration-300 text-center group">
+                <div class="text-3xl mb-2 group-hover:scale-110 transition">🔩</div>
+                <span class="font-bold text-xs block text-slate-200 group-hover:text-white">Suspensión</span>
+                <span class="text-[10px] text-slate-400 group-hover:text-brand-100">Amortiguadores KYB</span>
+            </a>
+            <a href="/autopartes?category=Filtros+%26+Mantenimiento" class="bg-slate-800/80 hover:bg-brand-600 p-5 rounded-2xl border border-slate-700 transition duration-300 text-center group">
+                <div class="text-3xl mb-2 group-hover:scale-110 transition">🧪</div>
+                <span class="font-bold text-xs block text-slate-200 group-hover:text-white">Filtros & Aceites</span>
+                <span class="text-[10px] text-slate-400 group-hover:text-brand-100">Mobil 1 Sintético</span>
+            </a>
+            <a href="/autopartes?category=Electricidad+%26+Sensores" class="bg-slate-800/80 hover:bg-brand-600 p-5 rounded-2xl border border-slate-700 transition duration-300 text-center group">
+                <div class="text-3xl mb-2 group-hover:scale-110 transition">⚡</div>
+                <span class="font-bold text-xs block text-slate-200 group-hover:text-white">Electricidad</span>
+                <span class="text-[10px] text-slate-400 group-hover:text-brand-100">Bujías Iridium NGK</span>
+            </a>
+            <a href="/autopartes?category=Carrocería+%26+Ópticas" class="bg-slate-800/80 hover:bg-brand-600 p-5 rounded-2xl border border-slate-700 transition duration-300 text-center group">
+                <div class="text-3xl mb-2 group-hover:scale-110 transition">💡</div>
+                <span class="font-bold text-xs block text-slate-200 group-hover:text-white">Farolas & Ópticas</span>
+                <span class="text-[10px] text-slate-400 group-hover:text-brand-100">LED Osram Homologado</span>
+            </a>
+            <a href="/autopartes" class="bg-slate-800/80 hover:bg-brand-600 p-5 rounded-2xl border border-slate-700 transition duration-300 text-center group">
+                <div class="text-3xl mb-2 group-hover:scale-110 transition">⚙️</div>
+                <span class="font-bold text-xs block text-slate-200 group-hover:text-white">Ver Todo</span>
+                <span class="text-[10px] text-slate-400 group-hover:text-brand-100"><%= totalParts %> Repuestos</span>
+            </a>
+        </div>
+
+        <!-- Autoparts Product Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <% featuredParts.forEach(part => { 
+                const isFit = part.compatible_vehicles.some(cv => 
+                    cv.make.toLowerCase() === garageVehicle.make.toLowerCase() && 
+                    cv.model.toLowerCase() === garageVehicle.model.toLowerCase()
+                );
+            %>
+                <div class="bg-slate-800 rounded-3xl border border-slate-700 p-5 flex flex-col justify-between hover:border-brand-500 transition group">
+                    <div>
+                        <!-- Image Container with Fitment Tag -->
+                        <div class="relative bg-slate-950 rounded-2xl h-44 flex items-center justify-center p-3 mb-4 overflow-hidden">
+                            <img src="<%= part.image %>" alt="<%= part.name %>" class="w-full h-full object-cover rounded-xl group-hover:scale-105 transition duration-300">
+                            
+                            <% if (isFit) { %>
+                                <span class="absolute top-2.5 left-2.5 bg-emerald-500/90 text-white text-[10px] font-black px-2 py-0.5 rounded shadow">
+                                    ✓ Compatible con <%= garageVehicle.model %>
+                                </span>
+                            <% } else { %>
+                                <span class="absolute top-2.5 left-2.5 bg-slate-900/90 text-slate-300 text-[10px] font-semibold px-2 py-0.5 rounded border border-slate-700">
+                                    <%= part.brand %>
+                                </span>
+                            <% } %>
+                        </div>
+
+                        <span class="text-[10px] font-mono text-slate-400 block mb-1">SKU: <%= part.sku %></span>
+                        <h4 class="font-black text-slate-100 text-sm leading-snug line-clamp-2">
+                            <a href="/autopartes/<%= part.id %>" class="hover:text-brand-400 transition"><%= part.name %></a>
+                        </h4>
+                        <p class="text-xs text-slate-400 mt-1"><%= part.brand %> • <%= part.category %></p>
+                    </div>
+
+                    <!-- Price & Add to Cart Action -->
+                    <div class="mt-4 pt-3 border-t border-slate-700 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs text-slate-400 block line-through"><%= formatCOP(part.old_price_cop) %></span>
+                            <span class="text-lg font-black text-white"><%= formatCOP(part.price_cop) %></span>
+                            <span class="text-[10px] text-slate-400 block"><%= formatUSD(part.price_usd) %></span>
+                        </div>
+
+                        <form action="/api/cart/add" method="POST">
+                            <input type="hidden" name="part_id" value="<%= part.id %>">
+                            <input type="hidden" name="quantity" value="1">
+                            <button 
+                                type="submit" 
+                                class="p-3 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white transition shadow-lg shadow-brand-600/30"
+                                title="Añadir al Carrito"
+                            >
+                                🛒 +
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+
+    </div>
+</section>
+
+<!-- ================= SECCIÓN 3: TASADOR & VENDER MI AUTO BANNER ================= -->
+<section class="py-20 bg-slate-100 border-t border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white rounded-3xl p-8 sm:p-12 shadow-xl border border-slate-200 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            <div class="lg:col-span-6 space-y-4">
+                <span class="bg-amber-100 text-amber-900 text-xs font-black px-3.5 py-1.5 rounded-full uppercase tracking-wider">
+                    💰 Venta Inmediata o Consignación
+                </span>
+                <h2 class="font-display text-3xl sm:text-4xl font-black text-slate-900 leading-tight">
+                    ¿Quieres vender tu auto hoy sin trámites engorrosos?
+                </h2>
+                <p class="text-slate-600 text-sm leading-relaxed">
+                    Obtén una oferta preliminar basada en datos reales de transacciones de mercado. Realizamos peritaje a domicilio gratis y gestionamos el pago y traspaso de manera 100% segura.
+                </p>
+                <div class="space-y-2 pt-2">
+                    <div class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                        <span class="text-emerald-600 text-base">✓</span> Pago inmediato vía transferencia bancaria garantizada.
+                    </div>
+                    <div class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                        <span class="text-emerald-600 text-base">✓</span> Peritaje técnico a domicilio sin costo.
+                    </div>
+                    <div class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                        <span class="text-emerald-600 text-base">✓</span> Trámite de traspaso ante autoridades de tránsito.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Form Card -->
+            <div class="lg:col-span-6 bg-slate-50 p-6 sm:p-7 rounded-3xl border border-slate-200">
+                <h3 class="font-display font-black text-slate-900 text-lg mb-1">Tasar mi Auto Ahora</h3>
+                <p class="text-xs text-slate-500 mb-4">Ingresa los datos para recibir la valoración instantánea:</p>
+
+                <form action="/api/tasador/calcular" method="POST" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Placa o VIN</label>
+                        <input type="text" name="plate" placeholder="Ej: ABC-123" required class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold uppercase focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Marca</label>
+                            <select name="make" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold">
+                                <option value="Toyota">Toyota</option>
+                                <option value="Mazda">Mazda</option>
+                                <option value="BMW">BMW</option>
+                                <option value="Audi">Audi</option>
+                                <option value="Chevrolet">Chevrolet</option>
+                                <option value="Ford">Ford</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Año</label>
+                            <select name="year" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold">
+                                <option value="2024">2024</option>
+                                <option value="2023">2023</option>
+                                <option value="2022">2022</option>
+                                <option value="2021" selected>2021</option>
+                                <option value="2020">2020</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Kilometraje</label>
+                            <input type="number" name="mileage" value="38000" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Estado</label>
+                            <select name="condition" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold">
+                                <option value="excelente">Excelente</option>
+                                <option value="bueno" selected>Bueno</option>
+                                <option value="regular">Regular</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">WhatsApp de Contacto</label>
+                        <input type="tel" name="phone" placeholder="+57 300 123 4567" required class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold">
+                    </div>
+                    <button type="submit" class="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl transition shadow-lg shadow-amber-500/20 text-xs uppercase tracking-wider">
+                        ⚡ Calcular Oferta Inmediata
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ================= SECCIÓN 4: ENTREGABLE ARQUITECTURA TEASER ================= -->
+<section class="py-16 bg-gradient-to-r from-indigo-900 via-slate-900 to-slate-950 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col lg:flex-row items-center justify-between gap-8 bg-slate-900/80 border border-indigo-500/30 p-8 rounded-3xl">
+            <div class="space-y-3">
+                <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-extrabold px-3 py-1 rounded-full uppercase">
+                    📐 Entregables de Arquitectura Full Stack
+                </span>
+                <h3 class="font-display text-2xl sm:text-3xl font-black">
+                    Sitemap, Modelo de Datos PostgreSQL & Especificación de APIs
+                </h3>
+                <p class="text-slate-300 text-xs sm:text-sm max-w-2xl">
+                    Consulta la arquitectura de software completa para este e-commerce bimodal: relaciones de base de datos relacional (Vehículos, Piezas, Fitments, Órdenes), endpoints REST/GraphQL y consideraciones de escalabilidad.
+                </p>
+            </div>
+            <a href="/arquitectura" class="px-6 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs uppercase tracking-wider transition shadow-lg shadow-indigo-600/30 whitespace-nowrap">
+                Ver Documentación Técnica &rarr;
+            </a>
+        </div>
+    </div>
+</section>
 
 <%- include('footer') %>

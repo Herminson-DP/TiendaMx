@@ -1,0 +1,657 @@
+<%- include('header') %>
+
+<main class="flex-1 py-6 sm:py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Breadcrumb & Top Bar -->
+        <div class="flex items-center justify-between gap-4 mb-6">
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                <a href="/" class="hover:text-brand-600 transition flex items-center gap-1">
+                    <span>🏠</span> Inicio
+                </a>
+                <span>/</span>
+                <span class="text-slate-900 font-bold">Acceso a AutoHub</span>
+            </div>
+
+            <div class="hidden sm:flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Portal Seguro SSL 256-Bit • AutoHub Colombia</span>
+            </div>
+        </div>
+
+        <!-- Flash Messages if any -->
+        <% if (typeof flash !== 'undefined' && flash) { %>
+            <div class="mb-6 p-4 rounded-2xl border text-xs font-bold flex items-center justify-between <%= flash.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700' %>">
+                <div class="flex items-center gap-2">
+                    <span class="text-base"><%= flash.type === 'error' ? '⚠️' : '✅' %></span>
+                    <span><%= flash.message %></span>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-700 text-sm">✕</button>
+            </div>
+        <% } %>
+
+        <!-- MAIN 2-COLUMN LAYOUT: FORMS (LEFT) + PLATFORM INFORMATION SHOWCASE (RIGHT) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- LEFT COLUMN: AUTH FORMS (LOGIN / REGISTER / RECOVERY) -->
+            <div class="lg:col-span-6 xl:col-span-5 bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
+                
+                <!-- Auth Tabs Header -->
+                <div class="bg-slate-900 p-2 flex items-center gap-1 border-b border-slate-800">
+                    <button 
+                        type="button" 
+                        id="tab-btn-login" 
+                        onclick="switchAuthTab('login')" 
+                        class="flex-1 py-3 px-3 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5 text-white bg-brand-600 shadow-md shadow-brand-600/30"
+                    >
+                        <span>🔑</span> Iniciar Sesión
+                    </button>
+                    <button 
+                        type="button" 
+                        id="tab-btn-register" 
+                        onclick="switchAuthTab('register')" 
+                        class="flex-1 py-3 px-3 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white hover:bg-slate-800/80"
+                    >
+                        <span>✨</span> Registrarse
+                    </button>
+                    <button 
+                        type="button" 
+                        id="tab-btn-recovery" 
+                        onclick="switchAuthTab('recovery')" 
+                        class="flex-1 py-3 px-3 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white hover:bg-slate-800/80"
+                    >
+                        <span>🛡️</span> Recuperar
+                    </button>
+                </div>
+
+                <!-- 1. LOGIN FORM -->
+                <div id="auth-panel-login" class="p-6 sm:p-8 space-y-6">
+                    <div>
+                        <span class="text-[10px] font-extrabold uppercase tracking-widest text-brand-600 bg-brand-50 px-2.5 py-1 rounded-md inline-block mb-1.5">
+                            Bienvenido a AutoHub
+                        </span>
+                        <h2 class="text-xl sm:text-2xl font-black font-display text-slate-900">
+                            Ingresa a tu Cuenta
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1">
+                            Accede a tu historial de compras, garaje virtual, cotizaciones y seguimiento de pedidos.
+                        </p>
+                    </div>
+
+                    <!-- Quick Demo Accounts One-Click Fill -->
+                    <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
+                        <div class="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                            <span class="flex items-center gap-1">⚡ Acceso Rápido Demo:</span>
+                            <span class="text-[10px] text-slate-400">Clic para rellenar</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button 
+                                type="button" 
+                                onclick="fillDemoCredentials('carlos@autohub.co', 'password123')"
+                                class="p-2 bg-white hover:bg-brand-50 hover:border-brand-300 border border-slate-200 rounded-xl text-left transition group cursor-pointer"
+                            >
+                                <span class="block text-[11px] font-black text-slate-900 group-hover:text-brand-600">Carlos Gómez</span>
+                                <span class="block text-[10px] text-slate-500 font-mono">carlos@autohub.co</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                onclick="fillDemoCredentials('herminson@autohub.co', 'password123')"
+                                class="p-2 bg-white hover:bg-brand-50 hover:border-brand-300 border border-slate-200 rounded-xl text-left transition group cursor-pointer"
+                            >
+                                <span class="block text-[11px] font-black text-slate-900 group-hover:text-brand-600">Herminson Delgado</span>
+                                <span class="block text-[10px] text-slate-500 font-mono">herminson@autohub.co</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <form action="/api/auth/login" method="POST" class="space-y-4">
+                        <input type="hidden" name="returnUrl" value="<%= typeof returnUrl !== 'undefined' ? returnUrl : '/' %>">
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Correo Electrónico *</label>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">✉️</span>
+                                <input 
+                                    type="email" 
+                                    name="email" 
+                                    id="loginEmail" 
+                                    required 
+                                    placeholder="ejemplo@autohub.co" 
+                                    class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-3 text-xs font-semibold focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-200 focus:outline-none transition"
+                                >
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-bold text-slate-700">Contraseña *</label>
+                                <button type="button" onclick="switchAuthTab('recovery')" class="text-[11px] text-brand-600 hover:underline font-bold">
+                                    ¿Olvidaste tu contraseña?
+                                </button>
+                            </div>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔒</span>
+                                <input 
+                                    type="password" 
+                                    name="password" 
+                                    id="loginPassword" 
+                                    required 
+                                    placeholder="••••••••" 
+                                    class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-10 py-3 text-xs font-semibold focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-200 focus:outline-none transition"
+                                >
+                                <button type="button" onclick="togglePasswordVisibility('loginPassword', this)" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+                                    👁️
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs pt-1">
+                            <label class="flex items-center gap-2 cursor-pointer select-none text-slate-600 font-medium">
+                                <input type="checkbox" name="rememberMe" checked class="w-4 h-4 rounded text-brand-600 border-slate-300 focus:ring-brand-500">
+                                <span>Recordar sesión</span>
+                            </label>
+                        </div>
+
+                        <button 
+                            type="submit" 
+                            class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-xl transition shadow-lg shadow-brand-600/30 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                        >
+                            <span>🚀</span> Iniciar Sesión en AutoHub
+                        </button>
+                    </form>
+
+                    <div class="text-center pt-2 border-t border-slate-100">
+                        <span class="text-xs text-slate-500">¿Aún no tienes cuenta?</span>
+                        <button type="button" onclick="switchAuthTab('register')" class="text-xs font-black text-brand-600 hover:underline ml-1">
+                            Regístrate Gratis aquí &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. REGISTER FORM -->
+                <div id="auth-panel-register" class="p-6 sm:p-8 space-y-6 hidden">
+                    <div>
+                        <span class="text-[10px] font-extrabold uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md inline-block mb-1.5">
+                            Crea tu Cuenta Nueva
+                        </span>
+                        <h2 class="text-xl sm:text-2xl font-black font-display text-slate-900">
+                            Registro de Usuario
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1">
+                            Al registrarte ingresarás de inmediato con acceso completo a compras, garaje y peritajes.
+                        </p>
+                    </div>
+
+                    <form action="/api/auth/register" method="POST" class="space-y-4" onsubmit="return validateRegisterForm()">
+                        <input type="hidden" name="returnUrl" value="<%= typeof returnUrl !== 'undefined' ? returnUrl : '/' %>">
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Nombre Completo *</label>
+                                <div class="relative">
+                                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">👤</span>
+                                    <input 
+                                        type="text" 
+                                        name="name" 
+                                        required 
+                                        placeholder="Ej: Herminson Delgado" 
+                                        class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-200 focus:outline-none transition"
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Correo Electrónico *</label>
+                                <div class="relative">
+                                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">✉️</span>
+                                    <input 
+                                        type="email" 
+                                        name="email" 
+                                        required 
+                                        placeholder="tu.correo@ejemplo.com" 
+                                        class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-200 focus:outline-none transition"
+                                    >
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Celular / WhatsApp *</label>
+                                <div class="relative">
+                                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">📱</span>
+                                    <input 
+                                        type="tel" 
+                                        name="phone" 
+                                        required 
+                                        placeholder="+57 310 000 0000" 
+                                        class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-200 focus:outline-none transition"
+                                    >
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Ciudad *</label>
+                                <select 
+                                    name="city" 
+                                    class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-semibold focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-200 focus:outline-none transition"
+                                >
+                                    <option value="Bogotá D.C." selected>Bogotá D.C.</option>
+                                    <option value="Medellín">Medellín</option>
+                                    <option value="Cali">Cali</option>
+                                    <option value="Barranquilla">Barranquilla</option>
+                                    <option value="Bucaramanga">Bucaramanga</option>
+                                    <option value="Pereira">Pereira</option>
+                                    <option value="Cartagena">Cartagena</option>
+                                    <option value="Otra Ciudad">Otra Ciudad</option>
+                                </select>
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Contraseña *</label>
+                                <div class="relative">
+                                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔒</span>
+                                    <input 
+                                        type="password" 
+                                        name="password" 
+                                        id="regPassword" 
+                                        required 
+                                        minlength="6" 
+                                        placeholder="Mínimo 6 caracteres" 
+                                        class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-10 py-2.5 text-xs font-semibold focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-200 focus:outline-none transition"
+                                    >
+                                    <button type="button" onclick="togglePasswordVisibility('regPassword', this)" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+                                        👁️
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Optional Garage Vehicle to personalize app -->
+                        <div class="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-200 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[11px] font-black text-blue-950 flex items-center gap-1.5">
+                                    <span>🚗</span> Tu Vehículo Actual (Garaje Opcional):
+                                </span>
+                                <span class="text-[9px] bg-blue-200 text-blue-900 font-bold px-2 py-0.5 rounded">Filtro Automático</span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 text-[11px]">
+                                <input type="text" name="garage_make" placeholder="Marca (ej. Toyota)" class="bg-white border border-blue-200 rounded-lg px-2 py-1.5 text-xs font-semibold focus:outline-none">
+                                <input type="text" name="garage_model" placeholder="Modelo (ej. RAV4)" class="bg-white border border-blue-200 rounded-lg px-2 py-1.5 text-xs font-semibold focus:outline-none">
+                                <input type="text" name="garage_plate" placeholder="Placa (ej. KLU-842)" class="bg-white border border-blue-200 rounded-lg px-2 py-1.5 text-xs font-mono font-bold uppercase focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div class="text-[11px] text-slate-500 leading-relaxed">
+                            Al registrarte, aceptas los Términos y Condiciones de Uso y la Política de Tratamiento de Datos Personales (Habeas Data Ley 1581 de 2012).
+                        </div>
+
+                        <button 
+                            type="submit" 
+                            class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl transition shadow-lg shadow-emerald-600/30 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                        >
+                            <span>✨</span> Crear Cuenta y Entrar a la Plataforma
+                        </button>
+                    </form>
+
+                    <div class="text-center pt-2 border-t border-slate-100">
+                        <span class="text-xs text-slate-500">¿Ya tienes cuenta en AutoHub?</span>
+                        <button type="button" onclick="switchAuthTab('login')" class="text-xs font-black text-brand-600 hover:underline ml-1">
+                            Inicia Sesión aquí &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. RECOVERY FORM (FORGOT PASSWORD) -->
+                <div id="auth-panel-recovery" class="p-6 sm:p-8 space-y-6 hidden">
+                    <div>
+                        <span class="text-[10px] font-extrabold uppercase tracking-widest text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md inline-block mb-1.5">
+                            Centro de Seguridad
+                        </span>
+                        <h2 class="text-xl sm:text-2xl font-black font-display text-slate-900">
+                            Recuperar Contraseña
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1">
+                            Ingresa tu correo para generar tu código OTP de verificación y restablecer tu clave al instante.
+                        </p>
+                    </div>
+
+                    <!-- Step 1: Request Code -->
+                    <div id="recovery-step-1" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Correo Electrónico Registrado *</label>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">✉️</span>
+                                <input 
+                                    type="email" 
+                                    id="recoveryEmailInput" 
+                                    required 
+                                    placeholder="ejemplo@autohub.co" 
+                                    value="carlos@autohub.co" 
+                                    class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-3 text-xs font-semibold focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-200 focus:outline-none transition"
+                                >
+                            </div>
+                        </div>
+
+                        <button 
+                            type="button" 
+                            onclick="requestPasswordRecovery()" 
+                            id="recoveryReqBtn" 
+                            class="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl transition shadow-lg shadow-amber-500/30 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                        >
+                            <span>📲</span> Enviar Código de Verificación OTP
+                        </button>
+                    </div>
+
+                    <!-- Step 2: Input Code & New Password (Hidden by default, shown via JS) -->
+                    <form id="recovery-step-2" action="/api/auth/reset-password" method="POST" class="space-y-4 hidden">
+                        <input type="hidden" name="recoveryEmail" id="hiddenRecoveryEmail">
+
+                        <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 space-y-1">
+                            <div class="font-black flex items-center gap-1.5">
+                                <span>✅</span> Código de Seguridad Generado
+                            </div>
+                            <div class="text-[11px]">
+                                Hemos generado el código de un solo uso: <strong id="simulatedOtpDisplay" class="font-mono bg-white px-2 py-0.5 rounded border border-emerald-300 text-emerald-950 font-black text-xs">AH-83921</strong>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Ingresa el Código OTP *</label>
+                            <input 
+                                type="text" 
+                                name="otpCode" 
+                                id="otpCodeInput" 
+                                required 
+                                placeholder="Ej: AH-83921" 
+                                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-mono font-black tracking-widest uppercase focus:bg-white focus:border-brand-500 focus:outline-none"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Nueva Contraseña *</label>
+                            <input 
+                                type="password" 
+                                name="newPassword" 
+                                required 
+                                minlength="6" 
+                                placeholder="Mínimo 6 caracteres" 
+                                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold focus:bg-white focus:border-brand-500 focus:outline-none"
+                            >
+                        </div>
+
+                        <button 
+                            type="submit" 
+                            class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-xl transition shadow-lg shadow-brand-600/30 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                        >
+                            <span>🔐</span> Restablecer Contraseña e Iniciar Sesión
+                        </button>
+                    </form>
+
+                    <div class="text-center pt-2 border-t border-slate-100">
+                        <button type="button" onclick="switchAuthTab('login')" class="text-xs font-bold text-slate-600 hover:text-slate-900">
+                            &larr; Volver al inicio de sesión
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: COMPREHENSIVE PLATFORM INFORMATION & CAPABILITIES SHOWCASE -->
+            <div class="lg:col-span-6 xl:col-span-7 space-y-6">
+                
+                <!-- Main Highlights Hero Banner -->
+                <div class="bg-gradient-to-br from-[#0B0F19] via-[#111625] to-[#1E293B] rounded-3xl p-6 sm:p-8 text-white border border-slate-800 shadow-2xl relative overflow-hidden">
+                    <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-brand-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="absolute top-0 right-0 p-6 text-6xl opacity-15 pointer-events-none">⚡</div>
+
+                    <div class="relative z-10 space-y-4">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-[11px] font-black uppercase tracking-wider text-blue-300">
+                            <span>🇨🇴</span> E-Commerce Automotriz Líder en Colombia
+                        </div>
+
+                        <h3 class="text-2xl sm:text-3xl font-display font-black tracking-tight leading-snug">
+                            Todo lo que puedes hacer en <span class="text-amber-400">AutoHub Motors & Parts</span>
+                        </h3>
+
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            AutoHub integra en una sola plataforma la compraventa de vehículos certificados con peritaje, venta de autopartes compatibles por VIN, tasación inteligente y pasarelas de pago colombianas con PSE y bancos nacionales.
+                        </p>
+
+                        <!-- Key Metrics Ribbon -->
+                        <div class="grid grid-cols-3 gap-3 pt-2 border-t border-slate-800 text-center">
+                            <div class="p-3 bg-white/5 rounded-2xl border border-white/10">
+                                <span class="font-display font-black text-xl sm:text-2xl text-amber-400 block">150+</span>
+                                <span class="text-[10px] text-slate-300 font-bold">Puntos de Peritaje</span>
+                            </div>
+                            <div class="p-3 bg-white/5 rounded-2xl border border-white/10">
+                                <span class="font-display font-black text-xl sm:text-2xl text-blue-400 block">+20,000</span>
+                                <span class="text-[10px] text-slate-300 font-bold">Autopartes OEM</span>
+                            </div>
+                            <div class="p-3 bg-white/5 rounded-2xl border border-white/10">
+                                <span class="font-display font-black text-xl sm:text-2xl text-emerald-400 block">19</span>
+                                <span class="text-[10px] text-slate-300 font-bold">Bancos por PSE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6 Major Features Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    
+                    <!-- Feature 1: Certificated Cars -->
+                    <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-brand-500 hover:shadow-md transition space-y-2 group">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-lg text-brand-600 group-hover:scale-110 transition-transform">
+                            🚗
+                        </div>
+                        <h4 class="font-display font-black text-slate-900 text-sm">
+                            Vehículos Certificados
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Historial legal verificado en RUNT, certificado de tradición y libertad sin embargos, peritaje mecánico digital y garantía de 1 año o 20.000 km.
+                        </p>
+                        <a href="/vehiculos" class="inline-flex items-center gap-1 text-[11px] font-black text-brand-600 hover:underline pt-1">
+                            Explorar Catálogo de Autos &rarr;
+                        </a>
+                    </div>
+
+                    <!-- Feature 2: OEM Auto Parts with VIN Filter -->
+                    <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-brand-500 hover:shadow-md transition space-y-2 group">
+                        <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-lg text-amber-600 group-hover:scale-110 transition-transform">
+                            ⚙️
+                        </div>
+                        <h4 class="font-display font-black text-slate-900 text-sm">
+                            Autopartes & Repuestos OEM
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Búsqueda y filtro por VIN y número de placa. Garantía de calce perfecto del 100% y despacho exprés nacional a cualquier ciudad de Colombia.
+                        </p>
+                        <a href="/autopartes" class="inline-flex items-center gap-1 text-[11px] font-black text-amber-600 hover:underline pt-1">
+                            Ver Repuestos & Autopartes &rarr;
+                        </a>
+                    </div>
+
+                    <!-- Feature 3: Live Car Valuation / Tasador -->
+                    <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-brand-500 hover:shadow-md transition space-y-2 group">
+                        <div class="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-lg text-orange-600 group-hover:scale-110 transition-transform">
+                            ⚡
+                        </div>
+                        <h4 class="font-display font-black text-slate-900 text-sm">
+                            Tasador con Algoritmo IA
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Calcula el valor comercial y de retoma de tu vehículo en 30 segundos con base en datos de Fasecolda, kilometraje y ofertas del mercado.
+                        </p>
+                        <a href="/tasador" class="inline-flex items-center gap-1 text-[11px] font-black text-orange-600 hover:underline pt-1">
+                            Tasar mi Auto Ahora &rarr;
+                        </a>
+                    </div>
+
+                    <!-- Feature 4: 100% Secure Colombian Payment Gateway -->
+                    <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-brand-500 hover:shadow-md transition space-y-2 group">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-lg text-emerald-600 group-hover:scale-110 transition-transform">
+                            🏛️
+                        </div>
+                        <h4 class="font-display font-black text-slate-900 text-sm">
+                            Pasarela PSE & 19 Bancos
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Paga en segundos con débito bancario PSE (Bancolombia, Davivienda, Nu, etc.), Nequi, Daviplata, tarjetas de crédito hasta 36 cuotas o crédito vehicular.
+                        </p>
+                        <span class="inline-flex items-center gap-1 text-[11px] font-black text-emerald-600 pt-1">
+                            Pagos Cifrados ACH Colombia
+                        </span>
+                    </div>
+
+                    <!-- Feature 5: Test Drive & Partner Repair Shops -->
+                    <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-brand-500 hover:shadow-md transition space-y-2 group">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-lg text-indigo-600 group-hover:scale-110 transition-transform">
+                            🛠️
+                        </div>
+                        <h4 class="font-display font-black text-slate-900 text-sm">
+                            Talleres Aliados & Test Drive
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Agenda prueba de manejo a domicilio o programa la instalación certificada de tus repuestos en nuestra red de más de 45 talleres aliados en el país.
+                        </p>
+                        <span class="inline-flex items-center gap-1 text-[11px] font-black text-indigo-600 pt-1">
+                            Cobertura en 7 Ciudades
+                        </span>
+                    </div>
+
+                    <!-- Feature 6: Virtual Garage & Order Tracking -->
+                    <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-brand-500 hover:shadow-md transition space-y-2 group">
+                        <div class="w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-lg text-purple-600 group-hover:scale-110 transition-transform">
+                            📋
+                        </div>
+                        <h4 class="font-display font-black text-slate-900 text-sm">
+                            Garaje Virtual & Rastreo
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Al iniciar sesión, tu garaje virtual filtra automáticamente repuestos compatibles, recordatorios de SOAT / Tecnomecánica y el historial de tus órdenes.
+                        </p>
+                        <span class="inline-flex items-center gap-1 text-[11px] font-black text-purple-600 pt-1">
+                            Gestión Inteligente de Flota
+                        </span>
+                    </div>
+
+                </div>
+
+                <!-- Customer Trust & Warranty Guarantee Footer Box -->
+                <div class="p-4 bg-slate-100 rounded-2xl border border-slate-200 flex items-center gap-3 text-slate-700 text-xs">
+                    <span class="text-2xl shrink-0">🛡️</span>
+                    <div>
+                        <strong class="font-black text-slate-900">Garantía de Satisfacción Total AutoHub:</strong> 
+                        <span>Si el repuesto adquirido no es compatible o el vehículo no cumple con el informe de peritaje, dispones de 30 días para devolución sin costo.</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</main>
+
+<script>
+    function switchAuthTab(tabKey) {
+        // Panels
+        document.getElementById('auth-panel-login').classList.add('hidden');
+        document.getElementById('auth-panel-register').classList.add('hidden');
+        document.getElementById('auth-panel-recovery').classList.add('hidden');
+
+        // Buttons style reset
+        const btns = ['login', 'register', 'recovery'];
+        btns.forEach(k => {
+            const btn = document.getElementById('tab-btn-' + k);
+            btn.className = 'flex-1 py-3 px-3 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white hover:bg-slate-800/80 cursor-pointer';
+        });
+
+        // Activate selected
+        const targetPanel = document.getElementById('auth-panel-' + tabKey);
+        const targetBtn = document.getElementById('tab-btn-' + tabKey);
+        if (targetPanel && targetBtn) {
+            targetPanel.classList.remove('hidden');
+            targetBtn.className = 'flex-1 py-3 px-3 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5 text-white bg-brand-600 shadow-md shadow-brand-600/30 cursor-pointer';
+        }
+    }
+
+    function fillDemoCredentials(email, pass) {
+        document.getElementById('loginEmail').value = email;
+        document.getElementById('loginPassword').value = pass;
+    }
+
+    function togglePasswordVisibility(fieldId, btn) {
+        const input = document.getElementById(fieldId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            btn.textContent = '🙈';
+        } else {
+            input.type = 'password';
+            btn.textContent = '👁️';
+        }
+    }
+
+    function validateRegisterForm() {
+        const pass = document.getElementById('regPassword').value;
+        if (pass.length < 6) {
+            alert('La contraseña debe tener al menos 6 caracteres.');
+            return false;
+        }
+        return true;
+    }
+
+    async function requestPasswordRecovery() {
+        const email = document.getElementById('recoveryEmailInput').value.trim();
+        if (!email) {
+            alert('Por favor ingresa tu correo electrónico.');
+            return;
+        }
+
+        const btn = document.getElementById('recoveryReqBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span>⏳</span> Generando Código...';
+
+        try {
+            const response = await fetch('/api/auth/request-recovery', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+
+            const data = await response.json();
+            btn.disabled = false;
+            btn.innerHTML = '<span>📲</span> Enviar Código de Verificación OTP';
+
+            if (data.success) {
+                document.getElementById('recovery-step-1').classList.add('hidden');
+                document.getElementById('recovery-step-2').classList.remove('hidden');
+                document.getElementById('hiddenRecoveryEmail').value = email;
+                document.getElementById('simulatedOtpDisplay').textContent = data.otpCode;
+                document.getElementById('otpCodeInput').value = data.otpCode;
+            } else {
+                alert(data.message || 'No se pudo generar el código. Verifica el correo.');
+            }
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerHTML = '<span>📲</span> Enviar Código de Verificación OTP';
+            // Fallback UI
+            document.getElementById('recovery-step-1').classList.add('hidden');
+            document.getElementById('recovery-step-2').classList.remove('hidden');
+            document.getElementById('hiddenRecoveryEmail').value = email;
+            document.getElementById('simulatedOtpDisplay').textContent = 'AH-83921';
+            document.getElementById('otpCodeInput').value = 'AH-83921';
+        }
+    }
+
+    // Auto switch based on URL query params
+    document.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get('mode');
+        if (mode === 'register' || mode === 'registro') {
+            switchAuthTab('register');
+        } else if (mode === 'recovery' || mode === 'recuperar') {
+            switchAuthTab('recovery');
+        }
+    });
+</script>
+
+<%- include('footer') %>

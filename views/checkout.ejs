@@ -1,331 +1,392 @@
 <%- include('header') %>
 
-<div style="margin-bottom: 24px;">
-    <h2>Finalizar Pedido y Pago Seguro 🔒</h2>
-    <p style="color: var(--text-muted); font-size: 0.95rem;">Completa tus datos de entrega en Colombia y selecciona tu método de pago preferido.</p>
-</div>
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    
+    <div class="mb-8">
+        <h1 class="font-display text-3xl font-black text-slate-900">Finalizar Compra de Autopartes</h1>
+        <p class="text-xs text-slate-500 mt-1">Completa los datos de envío y selecciona tu pasarela de pago preferida.</p>
+    </div>
 
-<div class="checkout-layout">
-    <!-- Left: Form Sections (Customer Info, Shipping, Payment) -->
-    <div>
-        <form action="/index.php?action=process-checkout" method="POST" id="checkoutForm">
-            <!-- Hidden inputs -->
-            <input type="hidden" name="payment_method" id="selectedPaymentMethod" value="PSE (Pagos Seguros en Línea)">
-            <input type="hidden" name="shipping_type" value="<%= shippingType || 'standard' %>">
+    <form action="/api/checkout/process" method="POST">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left: Shipping & Payment Details -->
+            <div class="lg:col-span-8 space-y-6">
+                
+                <!-- Shipping Address Card -->
+                <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
+                    <h3 class="font-display font-black text-slate-900 text-lg flex items-center gap-2">
+                        <span>📍</span> Dirección de Entrega en Colombia
+                    </h3>
 
-            <!-- Section 1: Customer Contact & Shipping Details -->
-            <div class="form-section-card">
-                <div class="form-section-title">
-                    <div class="section-num">1</div>
-                    <h3>Datos del Destinatario y Dirección en Colombia</h3>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-field">
-                        <label>Nombre(s) *</label>
-                        <input type="text" name="name" placeholder="Ej. Andrés Felipe" required value="Andrés Felipe">
-                    </div>
-                    <div class="form-field">
-                        <label>Apellidos *</label>
-                        <input type="text" name="lastname" placeholder="Ej. Restrepo Osorio" required value="Restrepo Osorio">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-field">
-                        <label>Correo Electrónico *</label>
-                        <input type="email" name="email" placeholder="andres@ejemplo.com" required value="andres.restrepo@email.com">
-                    </div>
-                    <div class="form-field">
-                        <label>Celular / WhatsApp *</label>
-                        <input type="tel" name="phone" placeholder="+57 310 456 7890" required value="+57 310 456 7890">
-                    </div>
-                </div>
-
-                <div class="form-field">
-                    <label>Dirección Completa (Calle/Carrera, Número, Barrio, Apto/Casa) *</label>
-                    <input type="text" name="address" placeholder="Cra. 15 # 93-60, Apto 402, Chicó Norte" required value="Cra. 15 # 93-60, Chicó Norte">
-                </div>
-
-                <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
-                    <div class="form-field">
-                        <label>Ciudad / Municipio *</label>
-                        <input type="text" name="city" placeholder="Bogotá D.C." required value="Bogotá D.C.">
-                    </div>
-                    <div class="form-field">
-                        <label>Departamento *</label>
-                        <select name="state" required style="padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-main);">
-                            <option value="Bogotá D.C." selected>Bogotá D.C.</option>
-                            <option value="Antioquia">Antioquia (Medellín)</option>
-                            <option value="Valle del Cauca">Valle del Cauca (Cali)</option>
-                            <option value="Atlántico">Atlántico (Barranquilla)</option>
-                            <option value="Santander">Santander (Bucaramanga)</option>
-                            <option value="Bolívar">Bolívar (Cartagena)</option>
-                            <option value="Cundinamarca">Cundinamarca</option>
-                            <option value="Risaralda">Risaralda (Pereira)</option>
-                            <option value="Caldas">Caldas (Manizales)</option>
-                            <option value="Tolima">Tolima (Ibagué)</option>
-                            <option value="Otro">Otro Departamento</option>
-                        </select>
-                    </div>
-                    <div class="form-field">
-                        <label>Código Postal *</label>
-                        <input type="text" name="zip" placeholder="110221" required value="110221">
-                    </div>
-                </div>
-
-                <div class="form-field">
-                    <label>Instrucciones de Entrega (Opcional)</label>
-                    <textarea name="notes" rows="2" placeholder="Ej. Dejar con portería o vigilancia del edificio..."></textarea>
-                </div>
-            </div>
-
-            <!-- Section 2: Shipping Method -->
-            <div class="form-section-card">
-                <div class="form-section-title">
-                    <div class="section-num">2</div>
-                    <h3>Método de Envío en Colombia</h3>
-                </div>
-
-                <div class="shipping-options">
-                    <label class="shipping-option-card <%= shippingType !== 'express' ? 'selected' : '' %>">
-                        <div class="flex-between">
-                            <strong>📦 Envío Nacional Estándar (Servientrega / Coordinadora)</strong>
-                            <span style="color: var(--accent); font-weight: 700;">
-                                <%= (details.subtotal >= details.freeThreshold || (details.coupon && details.coupon.type === 'free_shipping')) ? 'GRATIS' : `${formatMoney(config.shipping || 18000)} COP` %>
-                            </span>
-                        </div>
-                        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">Entrega en 2 a 4 días hábiles con guía de seguimiento nacional.</p>
-                        <input type="radio" name="shipping_selector" value="standard" <%= shippingType !== 'express' ? 'checked' : '' %> style="display: none;">
-                    </label>
-
-                    <label class="shipping-option-card <%= shippingType === 'express' ? 'selected' : '' %>">
-                        <div class="flex-between">
-                            <strong>⚡ Envío Express Colombia (24-48 horas)</strong>
-                            <span style="color: var(--primary); font-weight: 700;">
-                                <%= (details.subtotal >= details.freeThreshold || (details.coupon && details.coupon.type === 'free_shipping')) ? `${formatMoney(12000)} COP` : `${formatMoney(Number(config.shipping || 18000) + 12000)} COP` %>
-                            </span>
-                        </div>
-                        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">Despacho prioritario el mismo día para principales ciudades.</p>
-                        <input type="radio" name="shipping_selector" value="express" <%= shippingType === 'express' ? 'checked' : '' %> style="display: none;">
-                    </label>
-                </div>
-            </div>
-
-            <!-- Section 3: Payment Method -->
-            <div class="form-section-card">
-                <div class="form-section-title">
-                    <div class="section-num">3</div>
-                    <h3>Método de Pago Seguro</h3>
-                </div>
-
-                <!-- Payment Method Selector Tabs -->
-                <div class="payment-tabs">
-                    <button type="button" class="payment-tab-btn active" data-method="pse" data-label="PSE (Pagos Seguros en Línea)">
-                        📱 PSE / Bancos
-                    </button>
-                    <button type="button" class="payment-tab-btn" data-method="nequi" data-label="Nequi / Daviplata">
-                        📲 Nequi / Daviplata
-                    </button>
-                    <button type="button" class="payment-tab-btn" data-method="card" data-label="Tarjeta de Crédito / Débito">
-                        💳 Tarjeta de Crédito
-                    </button>
-                    <button type="button" class="payment-tab-btn" data-method="efecty" data-label="Efectivo Efecty / SuRed">
-                        💵 Efecty / SuRed
-                    </button>
-                    <button type="button" class="payment-tab-btn" data-method="paypal" data-label="PayPal">
-                        🅿️ PayPal
-                    </button>
-                </div>
-
-                <!-- Pane 1: PSE -->
-                <div class="payment-pane" id="pane-pse" style="padding: 20px; background: #f8fafc; border-radius: 12px;">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
-                        <span style="font-size: 1.8rem;">📱</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <h4 style="margin: 0;">PSE - Proveedor de Servicios Electrónicos</h4>
-                            <p style="margin: 0; font-size: 0.82rem; color: var(--text-muted);">Paga al instante debitando directamente de tu cuenta bancaria colombiana.</p>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Nombres</label>
+                            <input type="text" name="first_name" required value="Carlos" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Apellidos</label>
+                            <input type="text" name="last_name" required value="Gómez" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
                         </div>
                     </div>
-                    <div class="form-field">
-                        <label>Selecciona tu Banco *</label>
-                        <select style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: white;">
-                            <option>Bancolombia</option>
-                            <option>Davivienda</option>
-                            <option>Banco de Bogotá</option>
-                            <option>BBVA Colombia</option>
-                            <option>Banco de Occidente</option>
-                            <option>Scotiabank Colpatria</option>
-                            <option>Banco AV Villas</option>
-                            <option>Banco Popular</option>
-                            <option>Lulo Bank / Nu Colombia</option>
-                        </select>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Correo Electrónico</label>
+                            <input type="email" name="email" required value="carlos.gomez@ejemplo.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Teléfono / WhatsApp</label>
+                            <input type="tel" name="phone" required value="+57 310 987 6543" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-field">
-                            <label>Tipo de Cliente</label>
-                            <select style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: white;">
-                                <option>Persona Natural</option>
-                                <option>Persona Jurídica (Empresa)</option>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Dirección Completa</label>
+                            <input type="text" name="address" required value="Calle 127 # 14 - 45, Apto 502" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-slate-500 uppercase mb-1">Ciudad</label>
+                            <select name="city" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                <option value="Bogotá D.C.">Bogotá D.C.</option>
+                                <option value="Medellín">Medellín</option>
+                                <option value="Cali">Cali</option>
+                                <option value="Barranquilla">Barranquilla</option>
+                                <option value="Bucaramanga">Bucaramanga</option>
                             </select>
                         </div>
-                        <div class="form-field">
-                            <label>Cédula de Ciudadanía / NIT *</label>
-                            <input type="text" placeholder="1020304050" value="1032456789">
-                        </div>
                     </div>
-                </div>
 
-                <!-- Pane 2: Nequi / Daviplata -->
-                <div class="payment-pane" id="pane-nequi" style="display: none; padding: 20px; background: #f8fafc; border-radius: 12px; text-align: center;">
-                    <div style="font-size: 2.5rem; margin-bottom: 8px;">📲</div>
-                    <h4>Paga con Nequi o Daviplata</h4>
-                    <p style="color: var(--text-muted); font-size: 0.88rem; margin: 8px 0 16px;">
-                        Ingresa tu número de celular registrado para recibir la solicitud de pago push en tu billetera digital.
-                    </p>
-                    <div class="form-field" style="max-width: 340px; margin: 0 auto 12px; text-align: left;">
-                        <label>Número Celular Registrado en Nequi/Daviplata *</label>
-                        <input type="tel" placeholder="310 456 7890" value="3104567890">
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase mb-1">Departamento</label>
+                        <input type="text" name="department" value="Cundinamarca" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
                     </div>
-                </div>
 
-                <!-- Pane 3: Credit / Debit Card Simulator -->
-                <div class="payment-pane" id="pane-card" style="display: none;">
-                    <!-- Virtual Card Preview -->
-                    <div class="virtual-card">
-                        <div class="flex-between">
-                            <div class="virtual-card-chip"></div>
-                            <span style="font-size: 1.2rem; font-weight: 800;">VISA / MC</span>
-                        </div>
-                        <div class="virtual-card-number" id="cardNumPreview">
-                            •••• •••• •••• ••••
-                        </div>
-                        <div class="virtual-card-footer">
+                    <!-- Workshop installation add-on -->
+                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input type="checkbox" name="install_in_partner_shop" value="1" class="mt-0.5 rounded text-brand-600 focus:ring-brand-500">
                             <div>
-                                <span style="font-size: 0.65rem; display: block; opacity: 0.7;">TITULAR</span>
-                                <span id="cardHolderPreview">ANDRÉS RESTREPO</span>
+                                <span class="text-xs font-black text-slate-900 block">
+                                    🛠️ Enviar directo a un Taller Aliado AutoHub para Instalación
+                                </span>
+                                <span class="text-[11px] text-slate-500 block">
+                                    Despachamos la pieza a un taller certificado cercano a tu domicilio con cita previa reservada.
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Payment Method Card with Dynamic Bank Fields -->
+                <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
+                    <h3 class="font-display font-black text-slate-900 text-lg flex items-center gap-2">
+                        <span>💳</span> Selecciona tu Método de Pago o Banco
+                    </h3>
+
+                    <!-- Payment Method Selector Grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        
+                        <label class="checkout-method-card border-2 border-brand-500 bg-brand-50/60 rounded-2xl p-3 cursor-pointer transition flex flex-col items-center text-center gap-1 hover:border-brand-600">
+                            <input type="radio" name="payment_method" value="pse" checked onchange="switchCheckoutPaymentMethod('pse')" class="sr-only">
+                            <span class="text-xl">🏛️</span>
+                            <span class="text-xs font-black text-slate-900 block leading-tight">PSE Bancos</span>
+                            <span class="text-[10px] text-slate-500 font-medium leading-tight">Débito en Línea</span>
+                        </label>
+
+                        <label class="checkout-method-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-3 cursor-pointer transition flex flex-col items-center text-center gap-1">
+                            <input type="radio" name="payment_method" value="wallet" onchange="switchCheckoutPaymentMethod('wallet')" class="sr-only">
+                            <span class="text-xl">📱</span>
+                            <span class="text-xs font-black text-slate-900 block leading-tight">Nequi / Daviplata</span>
+                            <span class="text-[10px] text-slate-500 font-medium leading-tight">Push en App</span>
+                        </label>
+
+                        <label class="checkout-method-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-3 cursor-pointer transition flex flex-col items-center text-center gap-1">
+                            <input type="radio" name="payment_method" value="card" onchange="switchCheckoutPaymentMethod('card')" class="sr-only">
+                            <span class="text-xl">💳</span>
+                            <span class="text-xs font-black text-slate-900 block leading-tight">Tarjeta Crédito</span>
+                            <span class="text-[10px] text-slate-500 font-medium leading-tight">Hasta 36 cuotas</span>
+                        </label>
+
+                        <label class="checkout-method-card border-2 border-slate-200 hover:border-slate-300 rounded-2xl p-3 cursor-pointer transition flex flex-col items-center text-center gap-1">
+                            <input type="radio" name="payment_method" value="transfer" onchange="switchCheckoutPaymentMethod('transfer')" class="sr-only">
+                            <span class="text-xl">📑</span>
+                            <span class="text-xs font-black text-slate-900 block leading-tight">Transferencia</span>
+                            <span class="text-[10px] text-slate-500 font-medium leading-tight">QR Bancolombia</span>
+                        </label>
+
+                    </div>
+
+                    <!-- Dynamic Payment Sub-Fields -->
+
+                    <!-- 1. PSE Fields -->
+                    <div id="checkout-method-pse" class="checkout-fields-box bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-3">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                            <div class="flex items-center gap-2">
+                                <span class="text-base">🏛️</span>
+                                <span class="font-black text-xs text-slate-800">Pagos Seguros en Línea (PSE)</span>
+                            </div>
+                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">ACH Colombia</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="sm:col-span-2">
+                                <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Selecciona tu Banco o Entidad *</label>
+                                <select name="pse_bank" id="checkoutPseBank" onchange="updateCheckoutPseInfo(this.value)" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                    <option value="Bancolombia" selected>Bancolombia</option>
+                                    <option value="Banco de Bogotá">Banco de Bogotá</option>
+                                    <option value="Davivienda">Davivienda</option>
+                                    <option value="BBVA Colombia">BBVA Colombia</option>
+                                    <option value="Banco de Occidente">Banco de Occidente</option>
+                                    <option value="Banco Popular">Banco Popular</option>
+                                    <option value="Banco AV Villas">Banco AV Villas</option>
+                                    <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
+                                    <option value="Banco Caja Social">Banco Caja Social</option>
+                                    <option value="Banco Itaú Colombia">Banco Itaú Colombia</option>
+                                    <option value="Banco Agrario de Colombia">Banco Agrario de Colombia</option>
+                                    <option value="Lulo Bank">Lulo Bank</option>
+                                    <option value="Nu Colombia (Nubank)">Nu Colombia (Nubank)</option>
+                                    <option value="Dale!">Dale!</option>
+                                    <option value="Nequi">Nequi</option>
+                                    <option value="Daviplata">Daviplata</option>
+                                    <option value="RappiPay">RappiPay</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Tipo de Persona *</label>
+                                <select name="pse_person_type" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                    <option value="Persona Natural">Persona Natural</option>
+                                    <option value="Persona Jurídica">Persona Jurídica</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Documento de Identidad *</label>
+                                <input type="text" name="pse_doc_number" placeholder="Ej: 1098765432" value="1098765432" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div id="checkoutPseGuidance" class="p-3 bg-blue-50/80 rounded-xl border border-blue-200/80 text-[11px] text-blue-900 flex items-start gap-2">
+                            <span class="text-sm shrink-0">ℹ️</span>
+                            <div>
+                                <strong id="checkoutPseTitle">Bancolombia:</strong> 
+                                <span id="checkoutPseMsg">Ten a la mano tu Clave Dinámica o App Bancolombia para autorizar el débito en línea.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Wallet Fields -->
+                    <div id="checkout-method-wallet" class="checkout-fields-box bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-3 hidden">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                            <div class="flex items-center gap-2">
+                                <span class="text-base">📱</span>
+                                <span class="font-black text-xs text-slate-800">Billetera Digital Móvil</span>
+                            </div>
+                            <span class="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">Push Inmediato</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Billetera *</label>
+                                <select name="wallet_provider" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                    <option value="Nequi" selected>Nequi</option>
+                                    <option value="Daviplata">Daviplata</option>
+                                    <option value="Dale!">Dale!</option>
+                                    <option value="Transfiya">Transfiya</option>
+                                </select>
                             </div>
                             <div>
-                                <span style="font-size: 0.65rem; display: block; opacity: 0.7;">EXPIRA</span>
-                                <span id="cardExpPreview">12/28</span>
+                                <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Número de Celular *</label>
+                                <input type="tel" name="wallet_phone" placeholder="310 987 6543" value="3109876543" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
                             </div>
                         </div>
                     </div>
 
-                    <div class="form-field">
-                        <label>Número de Tarjeta *</label>
-                        <input type="text" id="cardNumberInput" placeholder="4000 1234 5678 9010" maxlength="19" value="4532 8921 7340 1928">
-                    </div>
-
-                    <div class="form-field">
-                        <label>Nombre impreso en la tarjeta *</label>
-                        <input type="text" id="cardHolderInput" placeholder="ANDRÉS RESTREPO" value="Andrés Restrepo">
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-field">
-                            <label>Fecha de Vencimiento (MM/AA) *</label>
-                            <input type="text" id="cardExpInput" placeholder="12/28" maxlength="5" value="12/28">
+                    <!-- 3. Card Fields -->
+                    <div id="checkout-method-card" class="checkout-fields-box bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-3 hidden">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                            <div class="flex items-center gap-2">
+                                <span class="text-base">💳</span>
+                                <span class="font-black text-xs text-slate-800">Tarjeta de Crédito / Débito</span>
+                            </div>
+                            <span class="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">Visa / MasterCard / Amex</span>
                         </div>
-                        <div class="form-field">
-                            <label>Código de Seguridad (CVV) *</label>
-                            <input type="password" placeholder="123" maxlength="4" value="842">
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="sm:col-span-2">
+                                <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Número de Tarjeta *</label>
+                                <input type="text" name="card_number" placeholder="4532 8921 0492 8821" value="4532 8921 0492 8821" maxlength="19" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Nombre en la Tarjeta *</label>
+                                <input type="text" name="card_holder" placeholder="Ej: CARLOS GOMEZ" value="CARLOS GOMEZ" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold uppercase focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Vence *</label>
+                                    <input type="text" name="card_exp" placeholder="MM/AA" value="08/28" maxlength="5" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-center focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">CVV *</label>
+                                    <input type="password" name="card_cvv" placeholder="•••" value="892" maxlength="4" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-center focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Cuotas</label>
+                                <select name="card_installments" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                                    <option value="1">1 Cuota (Sin intereses)</option>
+                                    <option value="3">3 Cuotas</option>
+                                    <option value="6">6 Cuotas</option>
+                                    <option value="12">12 Cuotas</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Cédula del Titular</label>
+                                <input type="text" name="card_doc_number" placeholder="1098765432" value="1098765432" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
                         </div>
                     </div>
+
+                    <!-- 4. Transfer Fields -->
+                    <div id="checkout-method-transfer" class="checkout-fields-box bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 space-y-3 hidden">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                            <div class="flex items-center gap-2">
+                                <span class="text-base">📑</span>
+                                <span class="font-black text-xs text-slate-800">Transferencia Bancaria Directa</span>
+                            </div>
+                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">AutoHub Motors</span>
+                        </div>
+
+                        <div class="p-3 bg-emerald-950 text-white rounded-xl text-xs space-y-1">
+                            <div class="text-[10px] text-emerald-400 font-bold uppercase">Cuenta Corriente Bancolombia</div>
+                            <div class="font-mono font-black text-sm">048-928192-11 (NIT 901.482.109-3)</div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">Banco Origen *</label>
+                                <input type="text" name="transfer_origin_bank" placeholder="Bancolombia, etc." value="Bancolombia" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-600 uppercase mb-1">No. Comprobante *</label>
+                                <input type="text" name="transfer_ref_number" placeholder="Ej: 9482019" value="TRF-9182310" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
-                <!-- Pane 4: Efecty -->
-                <div class="payment-pane" id="pane-efecty" style="display: none; padding: 24px; background: #f8fafc; border-radius: 12px; text-align: center;">
-                    <div style="font-size: 2.5rem; margin-bottom: 8px;">💵</div>
-                    <h4>Pago en Efectivo en Puntos Efecty / SuRed</h4>
-                    <p style="color: var(--text-muted); font-size: 0.88rem;">Se generará un número de convenio y referencia de pago para pagar en más de 10.000 puntos en toda Colombia.</p>
-                </div>
+            </div>
 
-                <!-- Pane 5: PayPal -->
-                <div class="payment-pane" id="pane-paypal" style="display: none; padding: 24px; background: #f8fafc; border-radius: 12px; text-align: center;">
-                    <div style="font-size: 2.5rem; margin-bottom: 8px;">🅿️</div>
-                    <h4>Pago Internacional con PayPal</h4>
-                    <p style="color: var(--text-muted); font-size: 0.88rem; margin: 8px 0 16px;">
-                        Serás redirigido de forma segura a PayPal para autorizar tu compra.
-                    </p>
-                </div>
+            <!-- Right: Order Summary Sidebar -->
+            <div class="lg:col-span-4 space-y-4">
+                <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4 sticky top-28">
+                    <h3 class="font-display font-black text-slate-900 text-lg">Resumen de Compra</h3>
 
-                <div style="margin-top: 24px;">
-                    <button type="submit" class="btn btn-accent btn-block btn-lg" style="font-size: 1.15rem; font-weight: 700; padding: 16px;">
-                        🔒 Confirmar y Pagar <%= formatMoney(details.final_total) %> COP
+                    <div class="divide-y divide-slate-100 max-h-60 overflow-y-auto">
+                        <% items.forEach(item => { %>
+                            <div class="py-2.5 flex items-center justify-between text-xs">
+                                <div>
+                                    <span class="font-bold text-slate-800 line-clamp-1"><%= item.part.name %></span>
+                                    <span class="text-[10px] text-slate-400">Cant: <%= item.quantity %> • <%= item.part.brand %></span>
+                                </div>
+                                <span class="font-black text-slate-900 ml-2 whitespace-nowrap"><%= formatCOP(item.totalCOP) %></span>
+                            </div>
+                        <% }); %>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100 space-y-2 text-xs text-slate-600">
+                        <div class="flex justify-between">
+                            <span>Subtotal</span>
+                            <span class="font-bold text-slate-900"><%= formatCOP(subtotalCOP) %></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Envío</span>
+                            <span class="font-bold <%= shippingCOP === 0 ? 'text-emerald-600' : 'text-slate-900' %>">
+                                <%= shippingCOP === 0 ? '¡GRATIS!' : formatCOP(shippingCOP) %>
+                            </span>
+                        </div>
+                        <div class="pt-2 border-t border-slate-100 flex justify-between items-baseline">
+                            <span class="font-black text-slate-900 text-sm">Total</span>
+                            <span class="font-black text-slate-900 text-xl"><%= formatCOP(totalCOP) %></span>
+                        </div>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl transition shadow-xl shadow-emerald-600/25 text-xs uppercase tracking-wider"
+                    >
+                        🔒 Confirmar y Pagar <%= formatCOP(totalCOP) %>
                     </button>
+
+                    <div class="text-[10px] text-slate-400 text-center space-y-1">
+                        <p>✓ Garantía de satisfacción o reembolso total</p>
+                        <p>✓ Facturación electrónica DIAN automática</p>
+                    </div>
                 </div>
             </div>
-        </form>
-    </div>
 
-    <!-- Right: Order Summary Sidebar -->
-    <div>
-        <div class="order-summary-card">
-            <h3 style="font-size: 1.25rem; margin-bottom: 18px;">Resumen del Pedido</h3>
-
-            <!-- Products List -->
-            <div style="max-height: 280px; overflow-y: auto; margin-bottom: 18px;">
-                <% details.items.forEach(item => { %>
-                    <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border);">
-                        <img src="<%= item.product.image %>" alt="<%= item.product.name %>" style="width: 54px; height: 54px; border-radius: 8px; object-fit: cover;">
-                        <div style="flex: 1;">
-                            <h5 style="font-size: 0.9rem; margin-bottom: 2px;"><%= item.product.name %></h5>
-                            <span style="font-size: 0.78rem; color: var(--text-muted);"><%= item.quantity %> x <%= formatMoney(item.unit_price) %></span>
-                        </div>
-                        <strong><%= formatMoney(item.total) %></strong>
-                    </div>
-                <% }); %>
-            </div>
-
-            <!-- Coupon Box in Checkout -->
-            <div class="coupon-box" style="margin-top: 0;">
-                <% if (details.coupon) { %>
-                    <div class="coupon-pill-active">
-                        <span>🏷️ <%= details.coupon.code %></span>
-                        <a href="/index.php?action=remove-coupon&redirect_to=checkout" style="color: #991b1b; text-decoration: none; font-weight: 700;">✕</a>
-                    </div>
-                <% } else { %>
-                    <form action="/index.php?action=apply-coupon" method="POST" class="coupon-input-group">
-                        <input type="hidden" name="redirect_to" value="checkout">
-                        <input type="text" name="coupon_code" placeholder="Código de descuento" required class="filter-input" style="flex: 1;">
-                        <button type="submit" class="btn btn-primary btn-sm">Aplicar</button>
-                    </form>
-                <% } %>
-            </div>
-
-            <div class="summary-row">
-                <span>Subtotal</span>
-                <span><%= formatMoney(details.subtotal) %></span>
-            </div>
-
-            <% if (details.discountAmount > 0) { %>
-                <div class="summary-row" style="color: #059669; font-weight: 600;">
-                    <span>Descuento (<%= details.coupon.code %>)</span>
-                    <span>-<%= formatMoney(details.discountAmount) %></span>
-                </div>
-            <% } %>
-
-            <div class="summary-row">
-                <span>Impuestos IVA (<%= config.tax || 19 %>%)</span>
-                <span><%= formatMoney(details.tax) %></span>
-            </div>
-
-            <div class="summary-row">
-                <span>Envío (<%= shippingType === 'express' ? 'Express Colombia' : 'Estándar' %>)</span>
-                <span><%= details.shipping === 0 ? 'GRATIS' : formatMoney(details.shipping) %></span>
-            </div>
-
-            <div class="summary-row summary-total">
-                <span>Total a Pagar</span>
-                <span style="color: var(--primary);"><%= formatMoney(details.final_total) %> COP</span>
-            </div>
-
-            <div style="margin-top: 16px; font-size: 0.8rem; color: var(--text-muted); text-align: center;">
-                🛡️ Garantía de 30 días con reembolso íntegro.
-            </div>
         </div>
-    </div>
+    </form>
+
 </div>
+
+<script>
+    function switchCheckoutPaymentMethod(methodKey) {
+        // Hide all method field boxes
+        const boxes = document.querySelectorAll('.checkout-fields-box');
+        boxes.forEach(b => b.classList.add('hidden'));
+
+        // Show target box
+        const target = document.getElementById('checkout-method-' + methodKey);
+        if (target) {
+            target.classList.remove('hidden');
+        }
+
+        // Update active styling on cards
+        const cards = document.querySelectorAll('.checkout-method-card');
+        cards.forEach(c => {
+            const input = c.querySelector('input[type="radio"]');
+            if (input && input.value === methodKey) {
+                input.checked = true;
+                c.classList.add('border-brand-500', 'bg-brand-50/60');
+                c.classList.remove('border-slate-200');
+            } else {
+                c.classList.remove('border-brand-500', 'bg-brand-50/60');
+                c.classList.add('border-slate-200');
+            }
+        });
+    }
+
+    function updateCheckoutPseInfo(bankName) {
+        const titleEl = document.getElementById('checkoutPseTitle');
+        const instEl = document.getElementById('checkoutPseMsg');
+        if (!titleEl || !instEl) return;
+
+        titleEl.textContent = bankName + ':';
+        const bankInstructions = {
+            'Bancolombia': 'Ten a la mano tu Clave Dinámica o App Móvil Bancolombia para autorizar el débito en línea.',
+            'Banco de Bogotá': 'Ingresa con tu clave segura del portal web o genera tu Token Digital en la App Móvil de Banco de Bogotá.',
+            'Davivienda': 'Ten listo tu número de identificación y tu clave virtual de Davivienda para autorizar en el portal seguro.',
+            'BBVA Colombia': 'Valida tu ingreso con Token BBVA o biometría facial desde la aplicación BBVA Móvil.',
+            'Banco de Occidente': 'Se solicitará tu clave de Banca Móvil y el código OTP enviado a tu celular.',
+            'Banco Popular': 'Accede con tu usuario y contraseña de Zona Transaccional del Banco Popular.',
+            'Banco AV Villas': 'Ingresa con tu contraseña de Banca Virtual y Token AV Villas.',
+            'Scotiabank Colpatria': 'Verifica la operación mediante el código de seguridad o Token de la App Scotiabank Colpatria.',
+            'Banco Caja Social': 'Ingresa con tu usuario amigo y clave de internet de Banco Caja Social.',
+            'Banco Itaú Colombia': 'Autoriza con tu clave de internet y el código dinámico Itaú.',
+            'Banco Agrario de Colombia': 'Usa tu usuario de Banca Virtual del Banco Agrario de Colombia.',
+            'Lulo Bank': 'Recibirás una notificación en tu App de Lulo Bank para aprobar el débito.',
+            'Nu Colombia (Nubank)': 'Se generará la orden de débito directo Nu con confirmación en la app de Nu.',
+            'Dale!': 'Ingresa con tu celular y clave de Dale! para débito en línea.',
+            'Nequi': 'Usa tu número celular Nequi y confirma la notificación push de pago.',
+            'Daviplata': 'Ingresa tu número de celular y confirma el código SMS de Daviplata.',
+            'RappiPay': 'Autoriza desde tu cuenta RappiPay con tu PIN de 4 dígitos.'
+        };
+        instEl.textContent = bankInstructions[bankName] || 'Serás dirigido a la plataforma segura de ' + bankName + ' con cifrado bancario de 256 bits.';
+    }
+</script>
 
 <%- include('footer') %>

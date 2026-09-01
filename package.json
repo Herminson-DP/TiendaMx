@@ -1,7 +1,7 @@
 {
-  "name": "tienda-colombia",
+  "name": "autohub-motors-parts",
   "version": "1.0.0",
-  "description": "Tienda online colombiana con catálogo de productos, carrito de compras y panel de administración",
+  "description": "Plataforma e-commerce automotriz: compraventa de vehículos certificados y venta de autopartes con compatibilidad por VIN",
   "main": "server.js",
   "type": "module",
   "scripts": {
