@@ -1,85 +1,82 @@
-    </main>
+        </div> <!-- /.container -->
+    </main> <!-- /.main-content -->
 
-    <!-- Global Rich E-Commerce Footer -->
-    <footer class="footer">
+    <!-- Global Footer -->
+    <footer class="footer" id="mainFooter">
         <div class="container">
             <div class="footer-grid">
-                <!-- Column 1: Store Bio -->
+                <!-- Col 1: Store Intro -->
                 <div class="footer-col">
-                    <div class="brand" style="color: white; margin-bottom: 16px;">
-                        <div class="brand-icon">🛍️</div>
-                        <span><%= config.store_name || 'TiendaMx' %></span>
+                    <div class="brand" style="margin-bottom: 16px;">
+                        <div class="brand-icon" style="width: 36px; height: 36px; font-size: 1.1rem;">🛍️</div>
+                        <span class="brand-text" style="color: white; -webkit-text-fill-color: white; font-size: 1.3rem;"><%= config.store_name || 'Tienda Colombia' %></span>
                     </div>
-                    <p style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 20px;">
-                        <%= config.tagline || 'Líderes en e-commerce con la mejor selección de productos de alta calidad, envíos rápidos y atención personalizada.' %>
+                    <p style="font-size: 0.9rem; color: #94a3b8; line-height: 1.6; margin-bottom: 20px;">
+                        <%= config.tagline || 'Tu destino favorito para tecnología, audio, moda y hogar en Colombia. Envíos garantizados y pagos 100% seguros.' %>
                     </p>
-                    <div class="flex-gap">
-                        <span style="font-size: 1.3rem;">🌐</span>
-                        <span style="font-size: 1.3rem;">📱</span>
-                        <span style="font-size: 1.3rem;">✉️</span>
-                        <span style="font-size: 1.3rem;">💬</span>
+                    <div class="payment-badges">
+                        <span class="pay-badge">🇨🇴 100% Colombia</span>
+                        <span class="pay-badge">🔒 Pago Seguro SSL</span>
                     </div>
                 </div>
 
-                <!-- Column 2: Quick Links -->
+                <!-- Col 2: Categories -->
                 <div class="footer-col">
-                    <h4>Categorías Populares</h4>
+                    <h4>Categorías Principales</h4>
                     <ul class="footer-links">
-                        <li><a href="/index.php?category=Electrónica">Electrónica & Laptops</a></li>
-                        <li><a href="/index.php?category=Audio">Audio & Audífonos</a></li>
-                        <li><a href="/index.php?category=Hogar+%26+Oficina">Hogar & Oficina</a></li>
-                        <li><a href="/index.php?category=Moda+%26+Deportes">Moda & Deportes</a></li>
-                        <li><a href="/index.php?category=Fotografía">Fotografía & Cámaras</a></li>
+                        <li><a href="/index.php?category=Electr%C3%B3nica">Electrónica & Laptops</a></li>
+                        <li><a href="/index.php?category=Audio">Audio & Audífonos Hi-Res</a></li>
+                        <li><a href="/index.php?category=Hogar%20%26%20Oficina">Hogar & Oficina Ergonómica</a></li>
+                        <li><a href="/index.php?category=Gadgets">Smartwatches & Gadgets</a></li>
+                        <li><a href="/index.php?category=Moda%20%26%20Deportes">Moda & Calzado Deportivo</a></li>
+                        <li><a href="/index.php?category=Fotograf%C3%ADa">Cámaras & Fotografía Pro</a></li>
                     </ul>
                 </div>
 
-                <!-- Column 3: Customer Care -->
+                <!-- Col 3: Customer Service -->
                 <div class="footer-col">
                     <h4>Atención al Cliente</h4>
                     <ul class="footer-links">
-                        <li><a href="/index.php?action=orders">Seguimiento de Pedidos</a></li>
-                        <li><a href="/index.php?action=wishlist">Lista de Favoritos</a></li>
-                        <li><a href="/index.php?action=cart">Mi Carrito de Compras</a></li>
-                        <li><a href="/index.php?action=admin">Acceso Administrativo</a></li>
-                        <li><a href="#">Términos y Condiciones</a></li>
+                        <li><a href="/index.php?action=orders">Rastrear mi Pedido</a></li>
+                        <li><a href="/index.php?action=wishlist">Mi Lista de Deseos</a></li>
+                        <li><a href="/index.php?action=cart">Ver Carrito de Compras</a></li>
+                        <li><a href="/index.php?action=admin">Panel Administrativo</a></li>
+                        <li><a href="/index.php">Catálogo Completo</a></li>
                     </ul>
                 </div>
 
-                <!-- Column 4: Newsletter & Guarantee -->
+                <!-- Col 4: Payments & Coverage in Colombia -->
                 <div class="footer-col">
-                    <h4>Únete al Club de Ofertas</h4>
-                    <p style="font-size: 0.85rem; margin-bottom: 14px;">
-                        Recibe descuentos exclusivos de hasta 40% y acceso anticipado a promociones.
+                    <h4>Métodos de Pago Aceptados</h4>
+                    <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 14px;">
+                        Paga de manera rápida y segura con los principales medios del país:
                     </p>
-                    <form onsubmit="event.preventDefault(); alert('¡Gracias por suscribirte al newsletter de <%= config.store_name || "Tienda Colombia" %>!'); this.reset();" class="flex-gap" style="margin-bottom: 14px;">
-                        <input type="email" placeholder="tu@correo.com" required style="padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; width: 100%; font-size: 0.88rem;">
-                        <button type="submit" class="btn btn-primary btn-sm" style="white-space: nowrap;">Unirme</button>
-                    </form>
-                    <div style="font-size: 0.78rem; color: #64748b;">
-                        🔒 Tus datos están protegidos con cifrado SSL de 256 bits.
+                    <div class="payment-badges" style="margin-bottom: 16px;">
+                        <span class="pay-badge">📱 PSE Bancos</span>
+                        <span class="pay-badge">📲 Nequi</span>
+                        <span class="pay-badge">🔴 Daviplata</span>
+                        <span class="pay-badge">💳 Visa / Mastercard</span>
+                        <span class="pay-badge">💵 Efecty / SuRed</span>
+                        <span class="pay-badge">🅿️ PayPal</span>
                     </div>
+                    <p style="font-size: 0.82rem; color: #64748b;">
+                        🚚 Envíos a Bogotá, Medellín, Cali, Barranquilla, Bucaramanga y todos los municipios de Colombia.
+                    </p>
                 </div>
             </div>
 
-            <!-- Footer Bottom -->
             <div class="footer-bottom">
                 <div>
-                    &copy; <%= currentYear %> <%= config.store_name || 'Tienda Colombia' %>. Todos los derechos reservados.
+                    &copy; <%= currentYear %> <strong><%= config.store_name || 'Tienda Colombia' %></strong>. Todos los derechos reservados.
                 </div>
-                <div class="payment-badges">
-                    <span class="pay-badge">📱 PSE</span>
-                    <span class="pay-badge">📲 Nequi</span>
-                    <span class="pay-badge">📲 Daviplata</span>
-                    <span class="pay-badge">🏦 Bancolombia</span>
-                    <span class="pay-badge">💳 VISA / MC</span>
-                    <span class="pay-badge">💳 AMEX</span>
-                    <span class="pay-badge">💵 Efecty</span>
-                    <span class="pay-badge">🅿️ PayPal</span>
+                <div style="font-size: 0.85rem; color: #64748b;">
+                    Precios expresados en Pesos Colombianos (COP) • IVA del <%= config.tax || 19 %>% incluido.
                 </div>
             </div>
         </div>
     </footer>
 
-    <script src="/public/js/main.js"></script>
+    <!-- Client Scripts -->
+    <script src="/js/main.js"></script>
 </body>
 </html>

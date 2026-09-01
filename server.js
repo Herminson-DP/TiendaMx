@@ -341,9 +341,9 @@ function getProducts(req, { category = null, search = null, sort = null, minPric
 function calculateCartTotals(req, shippingType = 'standard') {
   const cartItems = req.session.cart || {};
   const products = req.session.products || {};
-  const taxRate = Number(req.session.config.tax) || 16;
-  const baseShipping = Number(req.session.config.shipping) || 149.0;
-  const freeThreshold = Number(req.session.config.free_shipping_threshold) || 999.0;
+  const taxRate = Number(req.session.config && req.session.config.tax) || 19;
+  const baseShipping = Number(req.session.config && req.session.config.shipping) || 18000.0;
+  const freeThreshold = Number(req.session.config && req.session.config.free_shipping_threshold) || 200000.0;
 
   const items = [];
   let subtotal = 0;
@@ -621,7 +621,7 @@ const handleProcessCheckout = (req, res) => {
   };
 
   const orderId = 'ORD-' + Math.random().toString(36).substring(2, 9).toUpperCase();
-  const trackingNumber = 'MXP-' + Math.floor(10000000 + Math.random() * 90000000);
+  const trackingNumber = 'COL-' + Math.floor(10000000 + Math.random() * 90000000);
   const now = new Date();
   const dateStr = now.toISOString().replace('T', ' ').substring(0, 19);
 

@@ -1,7 +1,7 @@
 {
-  "name": "tiendamx",
+  "name": "tienda-colombia",
   "version": "1.0.0",
-  "description": "Tienda online con catálogo de productos, carrito de compras y panel de administración",
+  "description": "Tienda online colombiana con catálogo de productos, carrito de compras y panel de administración",
   "main": "server.js",
   "type": "module",
   "scripts": {

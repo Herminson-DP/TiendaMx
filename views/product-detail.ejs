@@ -196,7 +196,7 @@
                             <h3 class="card-title"><%= p.name %></h3>
                         </a>
                         <div class="card-price-row">
-                            <span class="price-main">$<%= relPrice.toLocaleString('es-MX', { minimumFractionDigits: 2 }) %></span>
+                            <span class="price-main"><%= formatMoney(relPrice) %></span>
                         </div>
                         <a href="/index.php?action=product&id=<%= p.id %>" class="btn btn-primary btn-block btn-sm">
                             Ver Producto
