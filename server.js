@@ -1,20 +1,25 @@
-// server.js - AutoHub Motors & Parts Full Stack Platform
+// server.js - AutoHub Motors & Parts Full Stack Platform with Persistent Database
 import express from 'express';
 import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { INITIAL_VEHICLES } from './data/vehicles.js';
-import { INITIAL_PARTS } from './data/parts.js';
-import { INITIAL_USERS } from './data/users.js';
+import { 
+  db, 
+  UserDB, 
+  VehicleDB, 
+  PartDB, 
+  OrderDB, 
+  ReservationDB, 
+  AppraisalDB 
+} from './data/database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// Mutable In-Memory Databases
-const USERS_DB = [...INITIAL_USERS];
+// OTP In-Memory Store for password recovery verification
 const OTP_STORE = {};
 
 // Middleware
@@ -30,14 +35,14 @@ app.set('views', path.join(__dirname, 'views'));
 // Session Configuration
 app.use(
   session({
-    secret: 'autohub-automotive-secret-key-2026',
+    secret: process.env.SESSION_SECRET || 'autohub-automotive-secret-key-2026',
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false, maxAge: 1000 * 60 * 60 * 24 } // 1 day
   })
 );
 
-// Helper to format currency
+// Helper to format currency in Colombian Pesos ($ COP)
 function formatCOP(amount) {
   if (amount === null || amount === undefined || isNaN(amount)) return '$ 0 COP';
   return '$ ' + Math.round(amount).toLocaleString('es-CO') + ' COP';
@@ -58,8 +63,10 @@ function resolveVehicleFromVINorSearch(query) {
   const clean = query.trim().toUpperCase();
   if (!clean || clean.length < 3) return null;
 
-  // 1. Direct match in INITIAL_VEHICLES by exact VIN, plate, or id
-  const directVehicle = INITIAL_VEHICLES.find(v => 
+  const allVehicles = VehicleDB.getAll();
+
+  // 1. Direct match in database vehicles by exact VIN, plate, or id
+  const directVehicle = allVehicles.find(v => 
     (v.vin && v.vin.toUpperCase() === clean) ||
     (v.plate && v.plate.toUpperCase() === clean) ||
     (v.id && v.id.toUpperCase() === clean)
@@ -76,10 +83,10 @@ function resolveVehicleFromVINorSearch(query) {
     };
   }
 
-  // 2. Partial match in INITIAL_VEHICLES (e.g. 5+ characters of VIN or plate without hyphens)
-  const partialVehicle = INITIAL_VEHICLES.find(v => 
+  // 2. Partial match in database vehicles
+  const partialVehicle = allVehicles.find(v => 
     (v.vin && clean.length >= 6 && v.vin.toUpperCase().includes(clean)) ||
-    (v.plate && clean.replace(/[^A-Z0-9]/g, '') === v.plate.replace(/[^A-Z0-9]/g, ''))
+    (v.plate && clean.replace(/[^A-Z0-9]/g, '') === (v.plate || '').replace(/[^A-Z0-9]/g, ''))
   );
   if (partialVehicle) {
     return {
@@ -240,7 +247,7 @@ function extractPaymentDetails(body) {
   };
 }
 
-// Global View Helpers Middleware
+// Global View Helpers Middleware & Database Sync
 app.use((req, res, next) => {
   if (!req.session.cart) req.session.cart = {};
   if (!req.session.wishlist) req.session.wishlist = [];
@@ -265,19 +272,33 @@ app.use((req, res, next) => {
     };
   }
 
-  // Sync user profile garage if logged in
-  if (req.session.user && req.session.user.garageVehicle) {
-    req.session.garageVehicle = req.session.user.garageVehicle;
+  // Synchronize active session user with database record if logged in
+  if (req.session.user && req.session.user.id) {
+    const freshUser = UserDB.getById(req.session.user.id);
+    if (freshUser) {
+      req.session.user = freshUser;
+      if (freshUser.garageVehicle) {
+        req.session.garageVehicle = freshUser.garageVehicle;
+      }
+    }
   }
 
-  // Cart item count
+  // Calculate cart item count
   let cartCount = 0;
   for (const pid in req.session.cart) {
     cartCount += req.session.cart[pid] || 0;
   }
 
+  // Count user orders from database
+  let userOrdersCount = 0;
+  if (req.session.user) {
+    userOrdersCount = OrderDB.getByUserId(req.session.user.id).length;
+  } else {
+    userOrdersCount = req.session.orders ? req.session.orders.length : 0;
+  }
+
   res.locals.currentUser = req.session.user || null;
-  res.locals.ordersCount = req.session.orders ? req.session.orders.length : 0;
+  res.locals.ordersCount = userOrdersCount;
   res.locals.cartCount = cartCount;
   res.locals.wishlistCount = req.session.wishlist.length;
   res.locals.garageVehicle = req.session.garageVehicle;
@@ -299,10 +320,13 @@ app.use((req, res, next) => {
 
 // 1. HOME LANDING PAGE (Dual Showcase & Search)
 app.get(['/', '/index.php'], (req, res) => {
-  const featuredVehicles = INITIAL_VEHICLES.slice(0, 3);
-  const featuredParts = INITIAL_PARTS.slice(0, 4);
-  const categories = [...new Set(INITIAL_PARTS.map(p => p.category))];
-  const carMakes = [...new Set(INITIAL_PARTS.flatMap(p => p.compatible_vehicles.map(cv => cv.make)))].sort();
+  const allVehicles = VehicleDB.getAll();
+  const allParts = PartDB.getAll();
+
+  const featuredVehicles = allVehicles.slice(0, 3);
+  const featuredParts = allParts.slice(0, 4);
+  const categories = [...new Set(allParts.map(p => p.category))];
+  const carMakes = [...new Set(allParts.flatMap(p => p.compatible_vehicles.map(cv => cv.make)))].sort();
 
   res.render('catalog', {
     title: 'AutoHub | Vehículos Certificados & Autopartes Compatibles',
@@ -310,8 +334,8 @@ app.get(['/', '/index.php'], (req, res) => {
     featuredParts,
     categories,
     carMakes,
-    totalVehicles: INITIAL_VEHICLES.length,
-    totalParts: INITIAL_PARTS.length
+    totalVehicles: allVehicles.length,
+    totalParts: allParts.length
   });
 });
 
@@ -319,7 +343,8 @@ app.get(['/', '/index.php'], (req, res) => {
 app.get('/vehiculos', (req, res) => {
   const { make, fuel, transmission, city, min_price, max_price, sort, search } = req.query;
 
-  let filtered = [...INITIAL_VEHICLES];
+  const allVehicles = VehicleDB.getAll();
+  let filtered = [...allVehicles];
 
   if (make && make !== 'all') {
     filtered = filtered.filter(v => v.make.toLowerCase() === make.toLowerCase());
@@ -365,9 +390,9 @@ app.get('/vehiculos', (req, res) => {
     filtered.sort((a, b) => a.mileage_km - b.mileage_km);
   }
 
-  const makes = [...new Set(INITIAL_VEHICLES.map(v => v.make))];
-  const fuels = [...new Set(INITIAL_VEHICLES.map(v => v.fuel))];
-  const cities = [...new Set(INITIAL_VEHICLES.map(v => v.city))];
+  const makes = [...new Set(allVehicles.map(v => v.make))];
+  const fuels = [...new Set(allVehicles.map(v => v.fuel))];
+  const cities = [...new Set(allVehicles.map(v => v.city))];
 
   res.render('vehicles-catalog', {
     title: 'Catálogo de Vehículos Certificados | AutoHub',
@@ -380,13 +405,13 @@ app.get('/vehiculos', (req, res) => {
 
 // 3. VEHICLE DETAIL VIEW (360° Gallery, 150-pt Inspection, Legal Report, Finance Calculator, Reservation)
 app.get('/vehiculos/:id', (req, res) => {
-  const vehicle = INITIAL_VEHICLES.find(v => v.id === req.params.id || v.slug === req.params.id);
+  const vehicle = VehicleDB.getByIdOrSlug(req.params.id);
   if (!vehicle) {
     req.session.flash = { type: 'error', message: 'Vehículo no encontrado en inventario.' };
     return res.redirect('/vehiculos');
   }
 
-  const relatedVehicles = INITIAL_VEHICLES.filter(v => v.id !== vehicle.id).slice(0, 3);
+  const relatedVehicles = VehicleDB.getAll().filter(v => v.id !== vehicle.id).slice(0, 3);
 
   res.render('vehicle-detail', {
     title: `${vehicle.title} (${vehicle.year}) | AutoHub Certificado`,
@@ -395,23 +420,23 @@ app.get('/vehiculos/:id', (req, res) => {
   });
 });
 
-// 4. VEHICLE RESERVATION SUBMISSION
-app.post('/vehiculos/reservar', (req, res) => {
+// 4. VEHICLE RESERVATION SUBMISSION (Persisted in Database)
+app.post('/vehiculos/reservar', async (req, res) => {
   const { vehicle_id, customer_name, customer_email, customer_phone, customer_city, payment_method, notes } = req.body;
 
   // Enforce authentication
   if (!req.session.user) {
     req.session.flash = { 
       type: 'error', 
-      message: 'Para continuar con la reserva o compra de tu vehículo debes registrarte si no estás registrado o iniciar sesión si ya tienes cuenta.' 
+      message: 'Para continuar con la reserva de tu vehículo debes registrarte o iniciar sesión en tu perfil.' 
     };
     return res.redirect(`/login?redirect=${encodeURIComponent('/vehiculos/' + (vehicle_id || ''))}`);
   }
 
-  const vehicle = INITIAL_VEHICLES.find(v => v.id === vehicle_id);
+  const vehicle = VehicleDB.getByIdOrSlug(vehicle_id);
 
   if (!vehicle) {
-    req.session.flash = { type: 'error', message: 'No se pudo procesar la reserva.' };
+    req.session.flash = { type: 'error', message: 'No se pudo procesar la reserva del vehículo.' };
     return res.redirect('/vehiculos');
   }
 
@@ -420,12 +445,13 @@ app.post('/vehiculos/reservar', (req, res) => {
 
   const reservation = {
     id: reservationId,
+    userId: req.session.user.id,
     vehicle,
     customer: {
-      name: customer_name,
-      email: customer_email,
-      phone: customer_phone,
-      city: customer_city,
+      name: customer_name || req.session.user.name,
+      email: customer_email || req.session.user.email,
+      phone: customer_phone || req.session.user.phone,
+      city: customer_city || req.session.user.city,
       notes: notes || 'Sin notas adicionales'
     },
     deposit_amount_usd: 500,
@@ -433,10 +459,17 @@ app.post('/vehiculos/reservar', (req, res) => {
     payment_method: paymentDetails.type,
     payment_details: paymentDetails,
     date: new Date().toISOString().replace('T', ' ').substring(0, 19),
-    status: 'Confirmada / Auto Apartado por 72h'
+    status: 'Apartado Confirmado por 72h (Peritaje 150 Puntos)'
   };
 
+  // Save in Database
+  await ReservationDB.create(reservation);
   req.session.reservations.push(reservation);
+
+  req.session.flash = {
+    type: 'success',
+    message: `¡Reserva #${reservationId} confirmada exitosamente! El vehículo ha sido apartado para ti y registrado en tu perfil.`
+  };
 
   res.render('vehicle-receipt', {
     title: `Reserva #${reservationId} Confirmada | AutoHub`,
@@ -444,10 +477,11 @@ app.post('/vehiculos/reservar', (req, res) => {
   });
 });
 
-// 5. AUTO PARTS CATALOG (Strict System Parts & VIN Compatibility Search)
+// 5. AUTO PARTS CATALOG (Strict Database Parts & VIN Compatibility Search)
 app.get('/autopartes', (req, res) => {
   let { category, brand, search, car_make, garage_fit_only } = req.query;
   const currentGarage = req.session.garageVehicle;
+  const allParts = PartDB.getAll();
 
   // 1. Normalize input parameters safely
   let rawSearch = '';
@@ -481,10 +515,9 @@ app.get('/autopartes', (req, res) => {
   // 2. Resolve VIN / Plate / WMI from rawSearch if applicable
   const detectedVehicle = resolveVehicleFromVINorSearch(rawSearch);
 
-  // 3. Strict filtering on existing INITIAL_PARTS system inventory ONLY
-  let filtered = [...INITIAL_PARTS];
+  // 3. Strict filtering on database parts
+  let filtered = [...allParts];
 
-  // If a VIN / Vehicle is detected, filter parts compatible with that vehicle make (and model if specific)
   if (detectedVehicle) {
     filtered = filtered.filter(part => 
       part.compatible_vehicles.some(cv => {
@@ -512,7 +545,7 @@ app.get('/autopartes', (req, res) => {
     );
   }
 
-  // Filter by Vehicle Make (car_make)
+  // Filter by Vehicle Make
   if (selectedMake && selectedMake !== 'all') {
     filtered = filtered.filter(p => 
       p.compatible_vehicles.some(cv => cv.make.toLowerCase() === selectedMake.toLowerCase())
@@ -524,12 +557,12 @@ app.get('/autopartes', (req, res) => {
     filtered = filtered.filter(p => p.category.toLowerCase() === selectedCategory.toLowerCase());
   }
 
-  // Filter by Part Brand
+  // Filter by Brand
   if (selectedBrand && selectedBrand !== 'all') {
     filtered = filtered.filter(p => p.brand.toLowerCase() === selectedBrand.toLowerCase());
   }
 
-  // Evaluate garage compatibility for current active garage vehicle
+  // Evaluate garage compatibility
   filtered = filtered.map(part => {
     const isCompatible = part.compatible_vehicles.some(
       cv => cv.make.toLowerCase() === currentGarage.make.toLowerCase() &&
@@ -542,9 +575,9 @@ app.get('/autopartes', (req, res) => {
     filtered = filtered.filter(p => p.isGarageCompatible);
   }
 
-  const categories = [...new Set(INITIAL_PARTS.map(p => p.category))];
-  const brands = [...new Set(INITIAL_PARTS.map(p => p.brand))].sort();
-  const allCarMakes = [...new Set(INITIAL_PARTS.flatMap(p => p.compatible_vehicles.map(cv => cv.make)))].sort();
+  const categories = [...new Set(allParts.map(p => p.category))];
+  const brands = [...new Set(allParts.map(p => p.brand))].sort();
+  const allCarMakes = [...new Set(allParts.flatMap(p => p.compatible_vehicles.map(cv => cv.make)))].sort();
 
   res.render('parts-catalog', {
     title: detectedVehicle 
@@ -569,7 +602,7 @@ app.get('/autopartes', (req, res) => {
 
 // 6. AUTO PART DETAIL VIEW
 app.get('/autopartes/:id', (req, res) => {
-  const part = INITIAL_PARTS.find(p => p.id === req.params.id || p.sku === req.params.id);
+  const part = PartDB.getByIdOrSku(req.params.id);
   if (!part) {
     req.session.flash = { type: 'error', message: 'Pieza o repuesto no encontrado.' };
     return res.redirect('/autopartes');
@@ -581,7 +614,7 @@ app.get('/autopartes/:id', (req, res) => {
           cv.model.toLowerCase() === currentGarage.model.toLowerCase()
   );
 
-  const relatedParts = INITIAL_PARTS.filter(p => p.id !== part.id && p.category === part.category).slice(0, 3);
+  const relatedParts = PartDB.getAll().filter(p => p.id !== part.id && p.category === part.category).slice(0, 3);
 
   res.render('part-detail', {
     title: `${part.name} - ${part.brand} | AutoHub`,
@@ -592,10 +625,10 @@ app.get('/autopartes/:id', (req, res) => {
   });
 });
 
-// 7. VIRTUAL GARAJE & USER SETTINGS ACTION
-app.post('/api/garage/set', (req, res) => {
+// 7. VIRTUAL GARAGE & USER SETTINGS ACTION
+app.post('/api/garage/set', async (req, res) => {
   const { make, model, year, engine, plate } = req.body;
-  req.session.garageVehicle = {
+  const updatedGarage = {
     make: make || 'Toyota',
     model: model || 'RAV4',
     year: Number(year) || 2021,
@@ -603,29 +636,40 @@ app.post('/api/garage/set', (req, res) => {
     plate: plate ? plate.toUpperCase() : (req.session.garageVehicle ? req.session.garageVehicle.plate : 'KLU-842')
   };
 
+  req.session.garageVehicle = updatedGarage;
+
+  if (req.session.user) {
+    await UserDB.update(req.session.user.id, { garageVehicle: updatedGarage });
+    req.session.user.garageVehicle = updatedGarage;
+  }
+
   req.session.flash = {
     type: 'success',
-    message: `🚗 Garaje virtual actualizado a: ${req.session.garageVehicle.make} ${req.session.garageVehicle.model} (${req.session.garageVehicle.year}). Compatibilidad activa en Pesos Colombianos ($ COP).`
+    message: `🚗 Garaje virtual actualizado a: ${updatedGarage.make} ${updatedGarage.model} (${updatedGarage.year}). Compatibilidad activa en Pesos Colombianos ($ COP).`
   };
 
   res.redirect(req.get('Referrer') || '/autopartes');
 });
 
 // Full Configuration & Options Save Route
-app.post('/api/settings/save', (req, res) => {
+app.post('/api/settings/save', async (req, res) => {
   const { 
     make, model, year, engine, plate,
     currency, defaultCity, autoFilterGarage, partnerInstallDefault, extendedWarrantyPrompt 
   } = req.body;
 
   if (make || model || year || engine) {
-    req.session.garageVehicle = {
+    const updatedGarage = {
       make: make || (req.session.garageVehicle ? req.session.garageVehicle.make : 'Toyota'),
       model: model || (req.session.garageVehicle ? req.session.garageVehicle.model : 'RAV4'),
       year: Number(year) || (req.session.garageVehicle ? req.session.garageVehicle.year : 2021),
       engine: engine || (req.session.garageVehicle ? req.session.garageVehicle.engine : '2.5L Híbrido'),
       plate: plate ? plate.toUpperCase() : (req.session.garageVehicle ? req.session.garageVehicle.plate : 'KLU-842')
     };
+    req.session.garageVehicle = updatedGarage;
+    if (req.session.user) {
+      await UserDB.update(req.session.user.id, { garageVehicle: updatedGarage });
+    }
   }
 
   req.session.userSettings = {
@@ -638,7 +682,7 @@ app.post('/api/settings/save', (req, res) => {
 
   req.session.flash = {
     type: 'success',
-    message: `⚙️ Opciones y configuraciones guardadas exitosamente. Precios configurados en Peso Colombiano ($ COP) para ${req.session.userSettings.defaultCity}.`
+    message: `⚙️ Opciones guardadas en Base de Datos. Precios configurados en Peso Colombiano ($ COP) para ${req.session.userSettings.defaultCity}.`
   };
 
   res.redirect(req.get('Referrer') || '/');
@@ -651,10 +695,9 @@ app.get(['/tasador', '/vender'], (req, res) => {
   });
 });
 
-app.post('/api/tasador/calcular', (req, res) => {
+app.post('/api/tasador/calcular', async (req, res) => {
   const { plate, vin, make, model, year, mileage, condition, phone, email } = req.body;
 
-  // Simple realistic valuation algorithm based on year and mileage
   const basePrices = {
     'toyota': 32000,
     'bmw': 55000,
@@ -672,7 +715,7 @@ app.post('/api/tasador/calcular', (req, res) => {
   const currentYr = 2026;
   const carYr = Number(year) || 2021;
   const age = Math.max(0, currentYr - carYr);
-  const depreciationFactor = Math.pow(0.92, age); // 8% per year
+  const depreciationFactor = Math.pow(0.92, age);
   const km = Number(mileage) || 40000;
   const kmFactor = Math.max(0.75, 1 - (km / 250000) * 0.3);
 
@@ -686,26 +729,36 @@ app.post('/api/tasador/calcular', (req, res) => {
 
   const lowRangeCOP = lowRangeUSD * 3950;
   const highRangeCOP = highRangeUSD * 3950;
+  const instantOfferUSD = Math.round(lowRangeUSD * 0.96);
+  const instantOfferCOP = Math.round(lowRangeCOP * 0.96);
+
+  const valuationRecord = {
+    id: 'VAL-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+    userId: req.session.user ? req.session.user.id : null,
+    plate: plate ? plate.toUpperCase() : 'NO-REGISTRADA',
+    vin: vin ? vin.toUpperCase() : 'PENDIENTE',
+    make: make || 'Vehículo',
+    model: model || 'N/A',
+    year: carYr,
+    mileage: km,
+    condition: condition || 'bueno',
+    lowUSD: lowRangeUSD,
+    highUSD: highRangeUSD,
+    lowCOP: lowRangeCOP,
+    highCOP: highRangeCOP,
+    instantOfferUSD,
+    instantOfferCOP,
+    phone: phone || (req.session.user ? req.session.user.phone : ''),
+    email: email || (req.session.user ? req.session.user.email : ''),
+    date: new Date().toISOString().replace('T', ' ').substring(0, 19)
+  };
+
+  // Save to database
+  await AppraisalDB.create(valuationRecord);
 
   res.render('appraisal-result', {
     title: `Resultado de Tasación para tu ${make} ${model} | AutoHub`,
-    valuation: {
-      plate: plate ? plate.toUpperCase() : 'NO-REGISTRADA',
-      vin: vin ? vin.toUpperCase() : 'PENDIENTE',
-      make: make || 'Vehículo',
-      model: model || 'N/A',
-      year: carYr,
-      mileage: km,
-      condition: condition || 'bueno',
-      lowUSD: lowRangeUSD,
-      highUSD: highRangeUSD,
-      lowCOP: lowRangeCOP,
-      highCOP: highRangeCOP,
-      instantOfferUSD: Math.round(lowRangeUSD * 0.96),
-      instantOfferCOP: Math.round(lowRangeCOP * 0.96),
-      phone,
-      email
-    }
+    valuation: valuationRecord
   });
 });
 
@@ -719,7 +772,7 @@ app.get('/carrito', (req, res) => {
 
   for (const partId in cart) {
     const qty = cart[partId];
-    const part = INITIAL_PARTS.find(p => p.id === partId);
+    const part = PartDB.getByIdOrSku(partId);
     if (part && qty > 0) {
       const itemTotalCOP = part.price_cop * qty;
       const itemTotalUSD = part.price_usd * qty;
@@ -798,7 +851,7 @@ app.get('/checkout', (req, res) => {
 
   for (const partId in cart) {
     const qty = cart[partId];
-    const part = INITIAL_PARTS.find(p => p.id === partId);
+    const part = PartDB.getByIdOrSku(partId);
     if (part && qty > 0) {
       const itemTotalCOP = part.price_cop * qty;
       subtotalCOP += itemTotalCOP;
@@ -823,7 +876,7 @@ app.get('/checkout', (req, res) => {
   });
 });
 
-app.post('/api/checkout/process', (req, res) => {
+app.post('/api/checkout/process', async (req, res) => {
   const { 
     first_name, 
     last_name, 
@@ -842,20 +895,18 @@ app.post('/api/checkout/process', (req, res) => {
   let subtotalCOP = 0;
 
   if (direct_part_id) {
-    // Direct buy without cart
     const qty = parseInt(direct_quantity, 10) || 1;
-    const part = INITIAL_PARTS.find(p => p.id === direct_part_id);
+    const part = PartDB.getByIdOrSku(direct_part_id);
     if (part) {
       const itemTotalCOP = part.price_cop * qty;
       subtotalCOP = itemTotalCOP;
       items.push({ part, quantity: qty, totalCOP: itemTotalCOP });
     }
   } else {
-    // Standard cart checkout
     const cart = req.session.cart || {};
     for (const partId in cart) {
       const qty = cart[partId];
-      const part = INITIAL_PARTS.find(p => p.id === partId);
+      const part = PartDB.getByIdOrSku(partId);
       if (part && qty > 0) {
         const itemTotalCOP = part.price_cop * qty;
         subtotalCOP += itemTotalCOP;
@@ -865,8 +916,8 @@ app.post('/api/checkout/process', (req, res) => {
   }
 
   // Fallback if no items
-  if (items.length === 0 && INITIAL_PARTS.length > 0) {
-    const fallbackPart = INITIAL_PARTS[0];
+  if (items.length === 0 && PartDB.getAll().length > 0) {
+    const fallbackPart = PartDB.getAll()[0];
     items.push({ part: fallbackPart, quantity: 1, totalCOP: fallbackPart.price_cop });
     subtotalCOP = fallbackPart.price_cop;
   }
@@ -879,13 +930,14 @@ app.post('/api/checkout/process', (req, res) => {
 
   const order = {
     id: orderId,
+    userId: req.session.user ? req.session.user.id : null,
     trackingNumber,
     items,
     subtotal: subtotalCOP,
     shipping: shippingCOP,
     total: totalCOP,
     customer: {
-      name: `${first_name} ${last_name}`,
+      name: `${first_name} ${last_name}`.trim(),
       email,
       phone,
       address: `${address}, ${city} - ${department}`,
@@ -894,12 +946,15 @@ app.post('/api/checkout/process', (req, res) => {
     paymentMethod: paymentDetails.type,
     payment_details: paymentDetails,
     date: new Date().toISOString().replace('T', ' ').substring(0, 19),
-    status: 'Preparando Despacho'
+    status: 'Preparando Despacho Express'
   };
 
+  // Persist order in Database
+  await OrderDB.create(order);
   req.session.orders.push(order);
+
   if (!direct_part_id) {
-    req.session.cart = {}; // Empty cart only on cart checkout
+    req.session.cart = {}; // Empty cart on checkout
   }
 
   res.render('receipt', {
@@ -908,7 +963,22 @@ app.post('/api/checkout/process', (req, res) => {
   });
 });
 
-// 11. TECHNICAL ARCHITECTURE & DATABASE DELIVERABLE VIEWER
+// 11. ORDERS HISTORY VIEW (/ordenes)
+app.get('/ordenes', (req, res) => {
+  let ordersList = [];
+  if (req.session.user) {
+    ordersList = OrderDB.getByUserId(req.session.user.id);
+  } else {
+    ordersList = req.session.orders || [];
+  }
+
+  res.render('orders', {
+    title: 'Historial de Pedidos de Autopartes | AutoHub Colombia',
+    orders: ordersList
+  });
+});
+
+// 12. TECHNICAL ARCHITECTURE & DATABASE DELIVERABLE VIEWER
 app.get('/arquitectura', (req, res) => {
   res.render('architecture-docs', {
     title: 'Arquitectura de Software, Diagramas & Esquema de Base de Datos | AutoHub'
@@ -916,17 +986,17 @@ app.get('/arquitectura', (req, res) => {
 });
 
 // -------------------------------------------------------------
-// 12. AUTHENTICATION & USER MANAGEMENT ROUTES
+// 13. AUTHENTICATION & USER MANAGEMENT ROUTES (Database Integrated)
 // -------------------------------------------------------------
 
 // A. Login View
 app.get(['/login', '/iniciar-sesion'], (req, res) => {
   const mode = req.query.mode || 'login';
-  const returnUrl = req.query.redirect || req.query.returnUrl || '/';
+  const returnUrl = req.query.redirect || req.query.returnUrl || '/perfil';
 
-  // If already logged in, redirect to profile or returnUrl
+  // If already logged in, redirect directly to profile or returnUrl
   if (req.session.user && mode === 'login') {
-    return res.redirect(returnUrl !== '/' ? returnUrl : '/perfil');
+    return res.redirect(returnUrl);
   }
 
   res.render('login', {
@@ -938,7 +1008,7 @@ app.get(['/login', '/iniciar-sesion'], (req, res) => {
 
 // B. Register View (Direct tab shortcut)
 app.get(['/registro', '/registrarse'], (req, res) => {
-  const returnUrl = req.query.redirect || req.query.returnUrl || '/';
+  const returnUrl = req.query.redirect || req.query.returnUrl || '/perfil';
   if (req.session.user) {
     return res.redirect('/perfil');
   }
@@ -955,14 +1025,14 @@ app.get(['/recuperar-password', '/recuperar', '/forgot-password'], (req, res) =>
   res.render('login', {
     title: 'Recuperar Contraseña | AutoHub Colombia',
     mode: 'recovery',
-    returnUrl: '/'
+    returnUrl: '/perfil'
   });
 });
 
-// D. Process Login Form
+// D. Process Login Form (Verified against Database)
 app.post('/api/auth/login', (req, res) => {
   const { email, password, returnUrl } = req.body;
-  const targetUrl = returnUrl && returnUrl.startsWith('/') ? returnUrl : '/';
+  const targetUrl = (returnUrl && returnUrl.startsWith('/') && returnUrl !== '/login') ? returnUrl : '/perfil';
 
   if (!email || !password) {
     req.session.flash = { type: 'error', message: 'Por favor ingresa tu correo y contraseña.' };
@@ -970,42 +1040,33 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   const cleanEmail = email.trim().toLowerCase();
-  const user = USERS_DB.find(u => u.email.toLowerCase() === cleanEmail && u.password === password.trim());
+  const user = UserDB.getByEmail(cleanEmail);
 
-  if (!user) {
-    req.session.flash = { type: 'error', message: 'Correo electrónico o contraseña incorrectos. Verifica tus datos o usa el acceso demo.' };
+  if (!user || user.password !== password.trim()) {
+    req.session.flash = { 
+      type: 'error', 
+      message: 'Correo electrónico o contraseña incorrectos. Verifica tus credenciales o usa las cuentas de acceso demo.' 
+    };
     return res.redirect(`/login?redirect=${encodeURIComponent(targetUrl)}`);
   }
 
-  // Set Session User
-  req.session.user = {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
-    city: user.city,
-    department: user.department,
-    address: user.address,
-    role: user.role,
-    avatar: user.avatar,
-    garageVehicle: user.garageVehicle
-  };
-
-  // Sync session garage vehicle
+  // Store in session
+  req.session.user = user;
   if (user.garageVehicle) {
     req.session.garageVehicle = user.garageVehicle;
   }
 
   req.session.flash = { 
     type: 'success', 
-    message: `¡Bienvenido de nuevo, ${user.name}! Has ingresado correctamente a AutoHub.` 
+    message: `¡Bienvenido, ${user.name}! Has iniciado sesión correctamente en tu perfil de AutoHub.` 
   };
 
+  // Redirect directly to profile (or requested URL)
   res.redirect(targetUrl);
 });
 
-// E. Process Registration Form (Auto-login immediately)
-app.post('/api/auth/register', (req, res) => {
+// E. Process Registration Form (Persisted to Database & Auto-logged in)
+app.post('/api/auth/register', async (req, res) => {
   const { 
     name, 
     email, 
@@ -1018,7 +1079,7 @@ app.post('/api/auth/register', (req, res) => {
     returnUrl 
   } = req.body;
 
-  const targetUrl = returnUrl && returnUrl.startsWith('/') ? returnUrl : '/';
+  const targetUrl = (returnUrl && returnUrl.startsWith('/') && returnUrl !== '/login' && returnUrl !== '/registro') ? returnUrl : '/perfil';
 
   if (!name || !email || !password) {
     req.session.flash = { type: 'error', message: 'Nombre, correo y contraseña son obligatorios.' };
@@ -1026,26 +1087,24 @@ app.post('/api/auth/register', (req, res) => {
   }
 
   const cleanEmail = email.trim().toLowerCase();
-  const existingUser = USERS_DB.find(u => u.email.toLowerCase() === cleanEmail);
+  const existingUser = UserDB.getByEmail(cleanEmail);
 
   if (existingUser) {
     req.session.flash = { type: 'error', message: 'Ya existe una cuenta con este correo. Por favor inicia sesión.' };
     return res.redirect(`/login?redirect=${encodeURIComponent(targetUrl)}`);
   }
 
-  // Create new user
-  const newUser = {
-    id: 'usr_' + Date.now(),
+  // Create new user in Database
+  const newUser = await UserDB.create({
     name: name.trim(),
     email: cleanEmail,
     password: password.trim(),
     phone: phone ? phone.trim() : '+57 300 000 0000',
     city: city || 'Bogotá D.C.',
-    department: 'Colombia',
+    department: 'Cundinamarca',
     address: '',
     role: 'Cliente Verificado',
     avatar: '🚗',
-    createdAt: new Date().toISOString().substring(0, 10),
     garageVehicle: {
       make: garage_make ? garage_make.trim() : 'Toyota',
       model: garage_model ? garage_model.trim() : 'Corolla',
@@ -1053,29 +1112,15 @@ app.post('/api/auth/register', (req, res) => {
       engine: '2.0L Gasolina',
       plate: garage_plate ? garage_plate.trim().toUpperCase() : 'ABC-123'
     }
-  };
+  });
 
-  USERS_DB.push(newUser);
-
-  // Auto Login Immediately
-  req.session.user = {
-    id: newUser.id,
-    name: newUser.name,
-    email: newUser.email,
-    phone: newUser.phone,
-    city: newUser.city,
-    department: newUser.department,
-    address: newUser.address,
-    role: newUser.role,
-    avatar: newUser.avatar,
-    garageVehicle: newUser.garageVehicle
-  };
-
+  // Auto Login immediately
+  req.session.user = newUser;
   req.session.garageVehicle = newUser.garageVehicle;
 
   req.session.flash = { 
     type: 'success', 
-    message: `¡Registro exitoso! Bienvenido a AutoHub Colombia, ${newUser.name}. Ya tienes acceso total.` 
+    message: `¡Registro exitoso en la Base de Datos! Bienvenido a AutoHub Colombia, ${newUser.name}. Ya tienes tu perfil activo.` 
   };
 
   res.redirect(targetUrl);
@@ -1103,7 +1148,7 @@ app.post('/api/auth/request-recovery', (req, res) => {
 });
 
 // G. Process Password Reset Form
-app.post('/api/auth/reset-password', (req, res) => {
+app.post('/api/auth/reset-password', async (req, res) => {
   const { recoveryEmail, otpCode, newPassword } = req.body;
 
   if (!recoveryEmail || !newPassword) {
@@ -1112,50 +1157,35 @@ app.post('/api/auth/reset-password', (req, res) => {
   }
 
   const cleanEmail = recoveryEmail.trim().toLowerCase();
-  let user = USERS_DB.find(u => u.email.toLowerCase() === cleanEmail);
+  let user = UserDB.getByEmail(cleanEmail);
 
   if (!user) {
-    // If not found in mock array, create account with new password so user is never blocked
-    user = {
-      id: 'usr_' + Date.now(),
+    user = await UserDB.create({
       name: cleanEmail.split('@')[0].toUpperCase(),
       email: cleanEmail,
       password: newPassword.trim(),
       phone: '+57 310 987 6543',
       city: 'Bogotá D.C.',
       role: 'Cliente Verificado',
-      avatar: '👤',
-      garageVehicle: {
-        make: 'Toyota',
-        model: 'RAV4',
-        year: 2021,
-        engine: '2.5L Híbrido',
-        plate: 'KLU-842'
-      }
-    };
-    USERS_DB.push(user);
+      avatar: '👤'
+    });
   } else {
-    user.password = newPassword.trim();
+    await UserDB.updatePassword(user.id, newPassword.trim());
+    user = UserDB.getById(user.id);
   }
 
   // Clear OTP
   delete OTP_STORE[cleanEmail];
 
   // Auto Login upon reset
-  req.session.user = {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
-    city: user.city,
-    role: user.role,
-    avatar: user.avatar,
-    garageVehicle: user.garageVehicle
-  };
+  req.session.user = user;
+  if (user.garageVehicle) {
+    req.session.garageVehicle = user.garageVehicle;
+  }
 
   req.session.flash = { 
     type: 'success', 
-    message: '¡Contraseña actualizada exitosamente! Has iniciado sesión automáticamente en tu cuenta.' 
+    message: '¡Contraseña actualizada exitosamente en la base de datos! Has iniciado sesión en tu perfil.' 
   };
 
   res.redirect('/perfil');
@@ -1168,49 +1198,62 @@ app.get(['/logout', '/cerrar-sesion'], (req, res) => {
   res.redirect('/');
 });
 
-// I. User Profile Dashboard
+// I. User Profile Dashboard (Loaded dynamically from Database)
 app.get(['/perfil', '/mi-cuenta'], (req, res) => {
   if (!req.session.user) {
-    req.session.flash = { type: 'error', message: 'Por favor inicia sesión para acceder a tu perfil.' };
+    req.session.flash = { 
+      type: 'error', 
+      message: 'Por favor inicia sesión para acceder a tu perfil y panel de cuenta.' 
+    };
     return res.redirect('/login?redirect=/perfil');
   }
 
+  const freshUser = UserDB.getById(req.session.user.id) || req.session.user;
+  const userOrders = OrderDB.getByUserId(freshUser.id);
+  const userReservations = ReservationDB.getByUserId(freshUser.id);
+  const userAppraisals = AppraisalDB.getByUserId(freshUser.id);
+
   res.render('profile', {
-    title: `Mi Cuenta AutoHub | ${req.session.user.name}`,
-    currentUser: req.session.user,
-    ordersCount: req.session.orders ? req.session.orders.length : 0
+    title: `Mi Cuenta AutoHub | ${freshUser.name}`,
+    currentUser: freshUser,
+    orders: userOrders,
+    reservations: userReservations,
+    appraisals: userAppraisals,
+    ordersCount: userOrders.length
   });
 });
 
-// J. Update Profile Information
-app.post('/api/profile/update', (req, res) => {
+// J. Update Profile Information (Saved to Database)
+app.post('/api/profile/update', async (req, res) => {
   if (!req.session.user) {
     return res.redirect('/login');
   }
 
-  const { name, phone, city, address } = req.body;
+  const { name, phone, city, department, address, avatar } = req.body;
   
-  // Update in DB
-  const user = USERS_DB.find(u => u.id === req.session.user.id);
-  if (user) {
-    if (name) user.name = name.trim();
-    if (phone) user.phone = phone.trim();
-    if (city) user.city = city.trim();
-    if (address) user.address = address.trim();
+  const updatedUser = await UserDB.update(req.session.user.id, {
+    name: name ? name.trim() : req.session.user.name,
+    phone: phone ? phone.trim() : req.session.user.phone,
+    city: city ? city.trim() : req.session.user.city,
+    department: department ? department.trim() : (req.session.user.department || 'Cundinamarca'),
+    address: address ? address.trim() : req.session.user.address,
+    avatar: avatar || req.session.user.avatar || '👤'
+  });
+
+  if (updatedUser) {
+    req.session.user = updatedUser;
   }
 
-  // Update in Session
-  req.session.user.name = name ? name.trim() : req.session.user.name;
-  req.session.user.phone = phone ? phone.trim() : req.session.user.phone;
-  req.session.user.city = city ? city.trim() : req.session.user.city;
-  req.session.user.address = address ? address.trim() : req.session.user.address;
+  req.session.flash = { 
+    type: 'success', 
+    message: '✓ Datos personales actualizados correctamente en la Base de Datos.' 
+  };
 
-  req.session.flash = { type: 'success', message: 'Datos personales actualizados correctamente.' };
   res.redirect('/perfil');
 });
 
-// K. Update Profile Garage Vehicle
-app.post('/api/profile/garage', (req, res) => {
+// K. Update Profile Garage Vehicle (Saved to Database)
+app.post('/api/profile/garage', async (req, res) => {
   if (!req.session.user) {
     return res.redirect('/login');
   }
@@ -1220,43 +1263,49 @@ app.post('/api/profile/garage', (req, res) => {
     make: garage_make ? garage_make.trim() : 'Toyota',
     model: garage_model ? garage_model.trim() : 'Corolla',
     year: garage_year ? parseInt(garage_year, 10) : 2022,
-    engine: 'Motor Optimizado',
+    engine: 'Motor Optimizado OEM',
     plate: garage_plate ? garage_plate.trim().toUpperCase() : 'ABC-123'
   };
 
-  // Update in DB & Session
-  const user = USERS_DB.find(u => u.id === req.session.user.id);
-  if (user) user.garageVehicle = newGarage;
-  req.session.user.garageVehicle = newGarage;
+  const updatedUser = await UserDB.update(req.session.user.id, { garageVehicle: newGarage });
+  if (updatedUser) {
+    req.session.user = updatedUser;
+  }
   req.session.garageVehicle = newGarage;
 
-  req.session.flash = { type: 'success', message: 'Garaje virtual actualizado. Los repuestos se filtrarán para tu vehículo.' };
+  req.session.flash = { 
+    type: 'success', 
+    message: `🚗 Garaje virtual guardado en la Base de Datos: ${newGarage.make} ${newGarage.model} (${newGarage.year}).` 
+  };
+
   res.redirect('/perfil');
 });
 
-// L. Change Password from Profile
-app.post('/api/profile/change-password', (req, res) => {
+// L. Change Password from Profile (Saved to Database)
+app.post('/api/profile/change-password', async (req, res) => {
   if (!req.session.user) {
     return res.redirect('/login');
   }
 
   const { currentPassword, newPassword } = req.body;
-  const user = USERS_DB.find(u => u.id === req.session.user.id);
+  const user = UserDB.getById(req.session.user.id);
 
-  if (user && user.password && user.password !== currentPassword.trim()) {
-    req.session.flash = { type: 'error', message: 'La contraseña actual no coincide.' };
+  if (!user || user.password !== currentPassword.trim()) {
+    req.session.flash = { type: 'error', message: 'La contraseña actual ingresada no coincide.' };
     return res.redirect('/perfil');
   }
 
-  if (user) {
-    user.password = newPassword.trim();
-  }
+  await UserDB.updatePassword(user.id, newPassword.trim());
 
-  req.session.flash = { type: 'success', message: 'Contraseña actualizada con éxito.' };
+  req.session.flash = { 
+    type: 'success', 
+    message: '🔐 Contraseña actualizada con éxito en la Base de Datos.' 
+  };
+
   res.redirect('/perfil');
 });
 
 // Start Server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`AutoHub Motors & Parts server running at http://0.0.0.0:${PORT}`);
+  console.log(`AutoHub Motors & Parts server with Database running at http://0.0.0.0:${PORT}`);
 });
