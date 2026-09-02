@@ -7,6 +7,8 @@ import { INITIAL_VEHICLES } from './vehicles.js';
 import { INITIAL_PARTS } from './parts.js';
 import { INITIAL_USERS } from './users.js';
 
+export { INITIAL_VEHICLES, INITIAL_PARTS, INITIAL_USERS };
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DB_FILE_PATH = path.join(__dirname, 'autohub_db.json');
@@ -100,6 +102,24 @@ const defaultData = {
 // Initialize lowdb database
 export const db = await JSONFilePreset(DB_FILE_PATH, defaultData);
 
+// Ensure all initial demo users exist in the database
+if (!db.data.users || db.data.users.length === 0) {
+  db.data.users = [...INITIAL_USERS];
+  await db.write();
+} else {
+  // Sync any missing demo users
+  let hasNew = false;
+  for (const initUser of INITIAL_USERS) {
+    if (!db.data.users.some(u => u.email.toLowerCase() === initUser.email.toLowerCase())) {
+      db.data.users.push(initUser);
+      hasNew = true;
+    }
+  }
+  if (hasNew) {
+    await db.write();
+  }
+}
+
 // Helper to persist database writes safely
 async function saveDB() {
   await db.write();
@@ -109,17 +129,19 @@ async function saveDB() {
 // USER DATA ACCESS METHODS (CRUD)
 // -------------------------------------------------------------
 export const UserDB = {
-  getAll: () => db.data.users || [],
+  getAll: () => db.data.users || INITIAL_USERS,
   
   getById: (id) => {
     if (!id) return null;
-    return (db.data.users || []).find(u => u.id === id) || null;
+    const users = db.data.users && db.data.users.length > 0 ? db.data.users : INITIAL_USERS;
+    return users.find(u => u.id === id) || null;
   },
 
   getByEmail: (email) => {
     if (!email) return null;
     const clean = email.trim().toLowerCase();
-    return (db.data.users || []).find(u => u.email.toLowerCase() === clean) || null;
+    const users = db.data.users && db.data.users.length > 0 ? db.data.users : INITIAL_USERS;
+    return users.find(u => u.email && u.email.toLowerCase() === clean) || null;
   },
 
   create: async (userData) => {

@@ -82,27 +82,35 @@
                     </div>
 
                     <% if (typeof currentUser !== 'undefined' && currentUser) { %>
-                        <!-- Logged In User Dropdown / Badge -->
-                        <div class="flex items-center gap-1.5 sm:gap-2">
+                        <!-- Logged In User Dropdown / Badge & Logout Button -->
+                        <div class="flex items-center gap-2">
                             <a 
                                 href="/perfil" 
-                                class="flex items-center gap-2 bg-[#161d31] hover:bg-[#1f2942] border border-blue-500/30 hover:border-blue-400/60 px-3 py-1.5 rounded-xl text-xs font-bold text-white transition group shadow-md shadow-blue-900/20"
-                                title="Ver Mi Perfil, Garaje Virtual y Seguridad"
+                                class="flex items-center gap-2 bg-[#161d31] hover:bg-[#1f2942] border border-blue-500/40 hover:border-blue-400 px-3 py-1.5 rounded-xl text-xs font-bold text-white transition group shadow-md shadow-blue-900/20"
+                                title="Ver Mi Perfil, Garaje Virtual y Compras"
                             >
-                                <span class="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs text-white shrink-0">
+                                <span class="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs text-white shrink-0 shadow-xs">
                                     <%= currentUser.avatar || '👤' %>
                                 </span>
-                                <span class="font-extrabold text-blue-200 group-hover:text-white max-w-[110px] sm:max-w-[150px] truncate">
-                                    <%= currentUser.name %>
+                                <div class="text-left hidden sm:block">
+                                    <span class="block text-[10px] text-blue-300 font-normal leading-tight">Mi Cuenta</span>
+                                    <span class="block font-extrabold text-white max-w-[120px] lg:max-w-[150px] truncate leading-tight">
+                                        <%= currentUser.name.split(' ')[0] %>
+                                    </span>
+                                </div>
+                                <span class="sm:hidden font-extrabold text-white text-xs">
+                                    <%= currentUser.name.split(' ')[0] %>
                                 </span>
                             </a>
 
                             <a 
                                 href="/logout" 
-                                class="p-2 bg-slate-900 hover:bg-red-950/80 border border-slate-800 hover:border-red-500/40 text-slate-400 hover:text-red-400 rounded-xl text-xs font-bold transition"
-                                title="Cerrar Sesión"
+                                onclick="try{localStorage.removeItem('autohub_uid');}catch(e){}"
+                                class="flex items-center gap-1.5 px-3 py-1.5 bg-red-950/40 hover:bg-red-900/80 border border-red-500/30 hover:border-red-400 text-red-300 hover:text-white rounded-xl text-xs font-bold transition shadow-sm"
+                                title="Cerrar Sesión de AutoHub"
                             >
-                                🚪
+                                <span class="text-sm">🚪</span>
+                                <span class="hidden md:inline text-[11px]">Cerrar Sesión</span>
                             </a>
                         </div>
                     <% } else { %>
@@ -204,11 +212,11 @@
             <a 
                 href="<%= typeof currentUser !== 'undefined' && currentUser ? '/perfil' : '/login' %>" 
                 class="flex items-center gap-1.5 px-3 py-2 rounded-xl sm:rounded-full text-xs font-bold transition group <%= isProfile ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400/30' : 'text-slate-300 hover:text-white hover:bg-slate-800/80' %>"
-                title="<%= typeof currentUser !== 'undefined' && currentUser ? 'Mi Cuenta AutoHub' : 'Iniciar Sesión o Registro' %>"
+                title="<%= typeof currentUser !== 'undefined' && currentUser ? 'Ver Mi Perfil, Garaje y Compras' : 'Iniciar Sesión o Registro' %>"
                 id="floatingAccountBtn"
             >
                 <span class="text-sm"><%= typeof currentUser !== 'undefined' && currentUser ? (currentUser.avatar || '👤') : '👤' %></span>
-                <span class="hidden lg:inline"><%= typeof currentUser !== 'undefined' && currentUser ? currentUser.name.split(' ')[0] : 'Ingresar' %></span>
+                <span class="hidden md:inline"><%= typeof currentUser !== 'undefined' && currentUser ? 'Mi Perfil' : 'Ingresar' %></span>
             </a>
 
             <!-- DIVIDER -->
@@ -674,44 +682,6 @@
                     </form>
                 </div>
 
-                <!-- 1-Click Fast Demo Login Pill Buttons -->
-                <div class="space-y-2">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block text-center">O ingresa de inmediato con 1 Clic Demo:</span>
-                    <div class="grid grid-cols-2 gap-2">
-                        <form action="/api/auth/login" method="POST">
-                            <input type="hidden" name="email" value="carlos@autohub.co">
-                            <input type="hidden" name="password" value="autohub2026">
-                            <input type="hidden" name="returnUrl" id="authModalDemoReturn1" value="/">
-                            <button 
-                                type="submit" 
-                                class="w-full py-2 px-2.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 rounded-xl text-[10px] font-bold transition text-left flex items-center gap-1.5"
-                            >
-                                <span class="text-sm">👤</span>
-                                <div class="truncate">
-                                    <div class="font-black truncate">Carlos Gómez</div>
-                                    <div class="text-[9px] text-blue-600 font-mono">1 Clic Demo</div>
-                                </div>
-                            </button>
-                        </form>
-
-                        <form action="/api/auth/login" method="POST">
-                            <input type="hidden" name="email" value="herminson@autohub.co">
-                            <input type="hidden" name="password" value="autohub2026">
-                            <input type="hidden" name="returnUrl" id="authModalDemoReturn2" value="/">
-                            <button 
-                                type="submit" 
-                                class="w-full py-2 px-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 rounded-xl text-[10px] font-bold transition text-left flex items-center gap-1.5"
-                            >
-                                <span class="text-sm">⚡</span>
-                                <div class="truncate">
-                                    <div class="font-black truncate">Herminson Delgado</div>
-                                    <div class="text-[9px] text-emerald-600 font-mono">1 Clic Demo</div>
-                                </div>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
                 <!-- Trust Guarantee footnote -->
                 <div class="text-center pt-2 border-t border-slate-100">
                     <p class="text-[10px] text-slate-500">
@@ -725,8 +695,59 @@
     </div>
 
     <script>
-        // Global Auth State
+        // Global Auth State & LocalStorage Persistence
         window.IS_USER_LOGGED_IN = <%= (typeof currentUser !== 'undefined' && currentUser) ? 'true' : 'false' %>;
+        window.CURRENT_USER_ID = "<%= (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : '' %>";
+
+        // Save active session user ID to localStorage and document.cookie
+        if (window.CURRENT_USER_ID) {
+            try {
+                localStorage.setItem('autohub_uid', window.CURRENT_USER_ID);
+                document.cookie = "autohub_uid=" + encodeURIComponent(window.CURRENT_USER_ID) + "; path=/; max-age=2592000; SameSite=Lax";
+            } catch (e) {
+                console.error(e);
+            }
+        } else if (!window.location.pathname.includes('/logout') && !window.location.pathname.includes('/cerrar-sesion')) {
+            // If server didn't see the user in this request (e.g. iframe cookie policy), check localStorage
+            try {
+                const storedUid = localStorage.getItem('autohub_uid');
+                if (storedUid) {
+                    document.cookie = "autohub_uid=" + encodeURIComponent(storedUid) + "; path=/; max-age=2592000; SameSite=Lax";
+                    
+                    // Quick background sync with server
+                    fetch('/api/auth/session-sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'x-auth-uid': storedUid },
+                        body: JSON.stringify({ uid: storedUid })
+                    }).then(r => r.json()).then(data => {
+                        if (data && data.success) {
+                            if (window.location.pathname === '/login' || window.location.pathname === '/registro') {
+                                window.location.href = '/perfil';
+                            } else if (!window.IS_USER_LOGGED_IN) {
+                                window.location.reload();
+                            }
+                        }
+                    }).catch(err => console.log('Session sync trace:', err));
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Decorate internal navigation links to preserve auth_uid in iframe
+        document.addEventListener('DOMContentLoaded', () => {
+            const storedUid = localStorage.getItem('autohub_uid') || window.CURRENT_USER_ID;
+            if (storedUid) {
+                document.querySelectorAll('a[href^="/"]').forEach(a => {
+                    const href = a.getAttribute('href');
+                    if (href && !href.startsWith('/logout') && !href.startsWith('/cerrar-sesion') && !href.startsWith('/api') && !href.includes('auth_uid=')) {
+                        a.addEventListener('click', (ev) => {
+                            document.cookie = "autohub_uid=" + encodeURIComponent(storedUid) + "; path=/; max-age=2592000; SameSite=Lax";
+                        });
+                    }
+                });
+            }
+        });
 
         function showAuthRequiredModal(redirectUrl, customMessage) {
             const currentPath = redirectUrl || (window.location.pathname + window.location.search);

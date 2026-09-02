@@ -14,7 +14,7 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <a href="/logout" class="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5">
+                <a href="/logout" onclick="try{localStorage.removeItem('autohub_uid');}catch(e){}" class="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5">
                     <span>🚪</span> Cerrar Sesión
                 </a>
             </div>

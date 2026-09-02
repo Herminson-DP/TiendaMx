@@ -78,33 +78,7 @@
                         </p>
                     </div>
 
-                    <!-- Quick Demo Accounts One-Click Fill -->
-                    <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
-                        <div class="flex items-center justify-between text-[11px] font-bold text-slate-700">
-                            <span class="flex items-center gap-1">⚡ Acceso Rápido Demo:</span>
-                            <span class="text-[10px] text-slate-400">Clic para rellenar</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button 
-                                type="button" 
-                                onclick="fillDemoCredentials('carlos@autohub.co', 'password123')"
-                                class="p-2 bg-white hover:bg-brand-50 hover:border-brand-300 border border-slate-200 rounded-xl text-left transition group cursor-pointer"
-                            >
-                                <span class="block text-[11px] font-black text-slate-900 group-hover:text-brand-600">Carlos Gómez</span>
-                                <span class="block text-[10px] text-slate-500 font-mono">carlos@autohub.co</span>
-                            </button>
-                            <button 
-                                type="button" 
-                                onclick="fillDemoCredentials('herminson@autohub.co', 'password123')"
-                                class="p-2 bg-white hover:bg-brand-50 hover:border-brand-300 border border-slate-200 rounded-xl text-left transition group cursor-pointer"
-                            >
-                                <span class="block text-[11px] font-black text-slate-900 group-hover:text-brand-600">Herminson Delgado</span>
-                                <span class="block text-[10px] text-slate-500 font-mono">herminson@autohub.co</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <form action="/api/auth/login" method="POST" class="space-y-4">
+                    <form id="loginForm" action="/api/auth/login" method="POST" class="space-y-4">
                         <input type="hidden" name="returnUrl" value="<%= typeof returnUrl !== 'undefined' ? returnUrl : '/' %>">
 
                         <div>
@@ -116,7 +90,7 @@
                                     name="email" 
                                     id="loginEmail" 
                                     required 
-                                    placeholder="ejemplo@autohub.co" 
+                                    placeholder="tu.correo@ejemplo.com" 
                                     class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-3 text-xs font-semibold focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-200 focus:outline-none transition"
                                 >
                             </div>
@@ -324,8 +298,8 @@
                                     type="email" 
                                     id="recoveryEmailInput" 
                                     required 
-                                    placeholder="ejemplo@autohub.co" 
-                                    value="carlos@autohub.co" 
+                                    placeholder="tu.correo@ejemplo.com" 
+                                    value="" 
                                     class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-3 text-xs font-semibold focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-200 focus:outline-none transition"
                                 >
                             </div>
@@ -554,15 +528,21 @@
 <script>
     function switchAuthTab(tabKey) {
         // Panels
-        document.getElementById('auth-panel-login').classList.add('hidden');
-        document.getElementById('auth-panel-register').classList.add('hidden');
-        document.getElementById('auth-panel-recovery').classList.add('hidden');
+        const loginPanel = document.getElementById('auth-panel-login');
+        const registerPanel = document.getElementById('auth-panel-register');
+        const recoveryPanel = document.getElementById('auth-panel-recovery');
+
+        if (loginPanel) loginPanel.classList.add('hidden');
+        if (registerPanel) registerPanel.classList.add('hidden');
+        if (recoveryPanel) recoveryPanel.classList.add('hidden');
 
         // Buttons style reset
         const btns = ['login', 'register', 'recovery'];
         btns.forEach(k => {
             const btn = document.getElementById('tab-btn-' + k);
-            btn.className = 'flex-1 py-3 px-3 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white hover:bg-slate-800/80 cursor-pointer';
+            if (btn) {
+                btn.className = 'flex-1 py-3 px-3 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white hover:bg-slate-800/80 cursor-pointer';
+            }
         });
 
         // Activate selected
@@ -574,13 +554,9 @@
         }
     }
 
-    function fillDemoCredentials(email, pass) {
-        document.getElementById('loginEmail').value = email;
-        document.getElementById('loginPassword').value = pass;
-    }
-
     function togglePasswordVisibility(fieldId, btn) {
         const input = document.getElementById(fieldId);
+        if (!input) return;
         if (input.type === 'password') {
             input.type = 'text';
             btn.textContent = '🙈';
@@ -591,8 +567,8 @@
     }
 
     function validateRegisterForm() {
-        const pass = document.getElementById('regPassword').value;
-        if (pass.length < 6) {
+        const pass = document.getElementById('regPassword');
+        if (pass && pass.value.length < 6) {
             alert('La contraseña debe tener al menos 6 caracteres.');
             return false;
         }
@@ -600,15 +576,18 @@
     }
 
     async function requestPasswordRecovery() {
-        const email = document.getElementById('recoveryEmailInput').value.trim();
+        const emailInput = document.getElementById('recoveryEmailInput');
+        const email = emailInput ? emailInput.value.trim() : '';
         if (!email) {
             alert('Por favor ingresa tu correo electrónico.');
             return;
         }
 
         const btn = document.getElementById('recoveryReqBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<span>⏳</span> Generando Código...';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> Generando Código...';
+        }
 
         try {
             const response = await fetch('/api/auth/request-recovery', {
@@ -618,8 +597,10 @@
             });
 
             const data = await response.json();
-            btn.disabled = false;
-            btn.innerHTML = '<span>📲</span> Enviar Código de Verificación OTP';
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<span>📲</span> Enviar Código de Verificación OTP';
+            }
 
             if (data.success) {
                 document.getElementById('recovery-step-1').classList.add('hidden');
@@ -631,8 +612,10 @@
                 alert(data.message || 'No se pudo generar el código. Verifica el correo.');
             }
         } catch (err) {
-            btn.disabled = false;
-            btn.innerHTML = '<span>📲</span> Enviar Código de Verificación OTP';
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<span>📲</span> Enviar Código de Verificación OTP';
+            }
             // Fallback UI
             document.getElementById('recovery-step-1').classList.add('hidden');
             document.getElementById('recovery-step-2').classList.remove('hidden');
@@ -645,11 +628,13 @@
     // Auto switch based on URL query params
     document.addEventListener('DOMContentLoaded', () => {
         const params = new URLSearchParams(window.location.search);
-        const mode = params.get('mode');
+        const mode = params.get('mode') || (window.location.pathname.includes('registro') ? 'register' : 'login');
         if (mode === 'register' || mode === 'registro') {
             switchAuthTab('register');
         } else if (mode === 'recovery' || mode === 'recuperar') {
             switchAuthTab('recovery');
+        } else {
+            switchAuthTab('login');
         }
     });
 </script>
