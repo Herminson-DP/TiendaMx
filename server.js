@@ -315,6 +315,53 @@ app.use((req, res, next) => {
 });
 
 // -------------------------------------------------------------
+// AUTHENTICATION GATE MIDDLEWARE: REQUIRE LOGIN FOR APP ACCESS
+// -------------------------------------------------------------
+const PUBLIC_AUTH_PATHS = [
+  '/login',
+  '/iniciar-sesion',
+  '/registro',
+  '/registrarse',
+  '/recuperar-password',
+  '/recuperar',
+  '/forgot-password',
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/auth/request-recovery',
+  '/api/auth/reset-password'
+];
+
+app.use((req, res, next) => {
+  // Allow static assets (CSS, JS, images, favicon)
+  if (
+    req.path.startsWith('/css') ||
+    req.path.startsWith('/js') ||
+    req.path.startsWith('/images') ||
+    req.path.startsWith('/favicon') ||
+    req.path.endsWith('.css') ||
+    req.path.endsWith('.js') ||
+    req.path.endsWith('.png') ||
+    req.path.endsWith('.jpg') ||
+    req.path.endsWith('.svg') ||
+    req.path.endsWith('.ico')
+  ) {
+    return next();
+  }
+
+  // Allow public authentication routes
+  if (PUBLIC_AUTH_PATHS.includes(req.path)) {
+    return next();
+  }
+
+  // If user is not authenticated, strictly show and redirect to the Login view
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+
+  next();
+});
+
+// -------------------------------------------------------------
 // ROUTES
 // -------------------------------------------------------------
 
@@ -992,15 +1039,15 @@ app.get('/arquitectura', (req, res) => {
 // A. Login View
 app.get(['/login', '/iniciar-sesion'], (req, res) => {
   const mode = req.query.mode || 'login';
-  const returnUrl = req.query.redirect || req.query.returnUrl || '/perfil';
+  const returnUrl = req.query.redirect || req.query.returnUrl || '/';
 
-  // If already logged in, redirect directly to profile or returnUrl
+  // If already logged in, redirect directly to the main store page '/'
   if (req.session.user && mode === 'login') {
     return res.redirect(returnUrl);
   }
 
   res.render('login', {
-    title: 'Iniciar Sesión, Registro y Recuperar Contraseña | AutoHub Colombia',
+    title: 'Iniciar Sesión | AutoHub Colombia',
     mode,
     returnUrl
   });
@@ -1008,9 +1055,9 @@ app.get(['/login', '/iniciar-sesion'], (req, res) => {
 
 // B. Register View (Direct tab shortcut)
 app.get(['/registro', '/registrarse'], (req, res) => {
-  const returnUrl = req.query.redirect || req.query.returnUrl || '/perfil';
+  const returnUrl = req.query.redirect || req.query.returnUrl || '/';
   if (req.session.user) {
-    return res.redirect('/perfil');
+    return res.redirect('/');
   }
 
   res.render('login', {
@@ -1025,14 +1072,14 @@ app.get(['/recuperar-password', '/recuperar', '/forgot-password'], (req, res) =>
   res.render('login', {
     title: 'Recuperar Contraseña | AutoHub Colombia',
     mode: 'recovery',
-    returnUrl: '/perfil'
+    returnUrl: '/'
   });
 });
 
 // D. Process Login Form (Verified against Database)
 app.post('/api/auth/login', (req, res) => {
   const { email, password, returnUrl } = req.body;
-  const targetUrl = (returnUrl && returnUrl.startsWith('/') && returnUrl !== '/login') ? returnUrl : '/perfil';
+  const targetUrl = (returnUrl && returnUrl.startsWith('/') && returnUrl !== '/login' && returnUrl !== '/registro') ? returnUrl : '/';
 
   if (!email || !password) {
     req.session.flash = { type: 'error', message: 'Por favor ingresa tu correo y contraseña.' };
@@ -1058,10 +1105,10 @@ app.post('/api/auth/login', (req, res) => {
 
   req.session.flash = { 
     type: 'success', 
-    message: `¡Bienvenido, ${user.name}! Has iniciado sesión correctamente en tu perfil de AutoHub.` 
+    message: `¡Bienvenido, ${user.name}! Has iniciado sesión exitosamente. Ya puedes comprar y cotizar tus vehículos y repuestos.` 
   };
 
-  // Redirect directly to profile (or requested URL)
+  // Redirect directly to the main store page
   res.redirect(targetUrl);
 });
 
@@ -1079,7 +1126,7 @@ app.post('/api/auth/register', async (req, res) => {
     returnUrl 
   } = req.body;
 
-  const targetUrl = (returnUrl && returnUrl.startsWith('/') && returnUrl !== '/login' && returnUrl !== '/registro') ? returnUrl : '/perfil';
+  const targetUrl = (returnUrl && returnUrl.startsWith('/') && returnUrl !== '/login' && returnUrl !== '/registro') ? returnUrl : '/';
 
   if (!name || !email || !password) {
     req.session.flash = { type: 'error', message: 'Nombre, correo y contraseña son obligatorios.' };
@@ -1120,7 +1167,7 @@ app.post('/api/auth/register', async (req, res) => {
 
   req.session.flash = { 
     type: 'success', 
-    message: `¡Registro exitoso en la Base de Datos! Bienvenido a AutoHub Colombia, ${newUser.name}. Ya tienes tu perfil activo.` 
+    message: `¡Registro exitoso en la Base de Datos! Bienvenido a AutoHub Colombia, ${newUser.name}. Ya tienes acceso completo para comprar.` 
   };
 
   res.redirect(targetUrl);
@@ -1185,10 +1232,10 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
   req.session.flash = { 
     type: 'success', 
-    message: '¡Contraseña actualizada exitosamente en la base de datos! Has iniciado sesión en tu perfil.' 
+    message: '¡Contraseña actualizada exitosamente en la base de datos! Has iniciado sesión en AutoHub.' 
   };
 
-  res.redirect('/perfil');
+  res.redirect('/');
 });
 
 // H. Logout

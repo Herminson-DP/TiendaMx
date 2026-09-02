@@ -123,6 +123,7 @@
     </header>
 
     <!-- FLOATING MASTER COCKPIT DOCK (Navegación, Buscador, Carrito, Opciones & Tasador) -->
+    <% if (typeof currentUser !== 'undefined' && currentUser) { %>
     <% 
         const path = typeof currentPath !== 'undefined' ? currentPath : '';
         const isVehicles = path === '/' || path.startsWith('/vehiculos');
@@ -225,6 +226,7 @@
 
         </div>
     </nav>
+    <% } %>
 
     <!-- SEARCH HUD MODAL (FULL SCREEN COCKPIT SEARCH) -->
     <div id="searchModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-start justify-center p-4 sm:p-6 overflow-y-auto animate-fadeIn">
